@@ -5,7 +5,6 @@ Paper-first AI trading dashboard for Tuan. Streamlit UI over a Python agent core
 ## Setup
 
 - Python 3.11 or newer
-- Create a virtualenv and install deps:
 
 ```bash
 python -m venv .venv
@@ -14,7 +13,15 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Fill `.env` only when you have keys (Alpaca paper, Finnhub, xAI). Missing keys are fine for the skeleton — the app runs on empty SQLite / Yahoo later.
+Optional keys in `.env` (never commit the real file): `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `FINNHUB_API_KEY`, `XAI_API_KEY`.
+
+## Seed demo data
+
+```bash
+python scripts/seed_db.py
+```
+
+Loads `fixtures/paper_state.json` + `fixtures/paper_trades.csv` into `data/app.db`. Dashboard portfolio should read **$102,340.00**.
 
 ## Run
 
@@ -22,13 +29,13 @@ Fill `.env` only when you have keys (Alpaca paper, Finnhub, xAI). Missing keys a
 streamlit run app.py
 ```
 
-Binds to localhost by default. Do not add `--server.address 0.0.0.0` in v1.
+Localhost only in v1.
 
-## Daily flow (once agent scripts land)
+## Daily flow
 
-1. Run `paper_trade.py` (after US market close).
-2. Open the app and review Dashboard / Signals / Trades / Model.
-3. Change Settings only when you intend the next agent run to pick them up.
+1. (Optional) `python train.py` — walk-forward train, writes `results.json` + `model.joblib`
+2. `python paper_trade.py` — after US close; writes SQLite + `paper_report.md`
+3. Open the app; Settings changes apply on the next agent run
 
 ## Tests
 
@@ -42,14 +49,15 @@ pytest
 |------|------|
 | `app.py` | Entry + sidebar navigation |
 | `pages/` | Dashboard, Signals, Trades, Model, Settings |
-| `core/` | data, features, model, agent, db, config, ui |
-| `assets/style.css` | Dark trading-terminal theme tokens |
+| `core/` | data, features, model, agent, db, repository, charts |
+| `paper_trade.py` / `train.py` / `live_signal.py` / `news_sentiment.py` | Agent scripts |
+| `scripts/seed_db.py` | One-time fixture import |
+| `fixtures/` | Sample paper state/trades/report |
+| `assets/style.css` | Dark trading-terminal theme |
 | `data/` | `app.db` (gitignored) |
-| `tests/` | pytest for core rules |
-| `.streamlit/config.toml` | Streamlit dark theme |
 | `docs/DECISIONS.md` | Spec deviations log |
-| `CHAT.md` | Muse ↔ Cursor channel replies |
+| `CHAT.md` | Muse ↔ Cursor channel |
 
 ## Status
 
-H step 1 (skeleton) — empty states + theme. Fake data is step 2 (needs Tuan look approval before real wiring).
+H steps 1–6 complete on this branch (paper-only). Live toggle locked. Broker/xAI keys still optional.

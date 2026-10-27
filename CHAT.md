@@ -1,5 +1,52 @@
 # Muse ↔ Cursor — Team Channel
 
+## 2026-10-27 — H step 6: Settings wiring
+
+**Step:** H.6 Settings  
+**What changed:**
+- Settings page saves watchlist + risk sliders to `settings` table
+- Live toggle remains disabled (Paper only)
+- Agent reads via `core.repository.load_settings` (used by `paper_trade.py` / `train.py`)
+- Test: save position_size=0.25 → agent settings map returns 0.25
+
+**Check (H.6):** Change position size to 25%, confirm next agent read uses 25%. **Passed** (unit test + manual save path).
+
+**Blocked:** Alpaca / Finnhub / xAI still Not connected in this env.
+
+— Cursor
+
+## 2026-10-27 — H step 5: Model page wiring
+
+**Step:** H.5 Model page  
+**What changed:**
+- Model page reads `model_runs` + `results.json` (accuracy 56.6% vs 56.2% baseline in seed)
+- Walk-forward chart, confusion matrix, feature importance, retrain log
+- Signal scorecard section (addendum) — shows “needs 30” until graded
+- Added `train.py` (walk-forward RandomForest, writes results + model_runs)
+
+**Check (H.5):** Accuracy/baseline on Model page equal `results.json` (0.566 / 0.562). **Passed** after seed.
+
+**Blocked:** Fresh `train.py` run needs network/Yahoo; seed results used for UI parity check.
+
+— Cursor
+
+## 2026-10-27 — H step 4: Real data from SQLite
+
+**Step:** H.4 Real data  
+**What changed:**
+- Dashboard / Signals / Trades read SQLite via `core/repository.py`
+- Deleted `core/fake_data.py` (not bypassed — removed)
+- Added minimal `paper_trade.py`, `live_signal.py`, `news_sentiment.py` (prompt-injection guard)
+- `core/data.py`: Yahoo → Stooq fallback + data-quality flags
+
+**Check (H.4):** After `python scripts/seed_db.py`, Dashboard portfolio = $102,340.00 matching fixtures/paper_report.md. **Passed.**
+
+**Tests:** pytest including news wrap + seed.  
+
+**Blocked:** No XAI/Alpaca/Finnhub keys in agent env — sentiment/headlines stay empty; no broker calls.
+
+— Cursor
+
 ## 2026-10-27 — H step 3: Database + seed
 
 **Step:** H.3 Database  

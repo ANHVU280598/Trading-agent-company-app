@@ -1,35 +1,34 @@
-"""Settings — fake-data pass (H step 2). Live toggle locked. Save disabled until H6."""
+"""Settings — save to SQLite; Live locked (H step 6)."""
 
 from __future__ import annotations
 
-import os
+import re
 
 import streamlit as st
 
-from core import fake_data
-from core.components import sample_data_line
 from core.config import (
     SETTINGS_APPLY_NOTE,
     SETTINGS_CONFIDENCE_CAPTION,
     SETTINGS_LIVE_CAPTION,
+    SETTINGS_SAVED,
 )
+from core.repository import keys_connected, load_settings, save_settings
 from core.ui import page_heading
 
 page_heading("Settings")
-sample_data_line()
 
-cfg = fake_data.settings()
+cfg = load_settings()
+connected = keys_connected()
 
 col_left, col_right = st.columns(2)
 
 with col_left:
     st.markdown("##### Watchlist")
-    st.text_area(
+    watch_text = st.text_area(
         "Watchlist (one ticker per line)",
-        value="\n".join(cfg["watchlist"]),  # type: ignore[arg-type]
+        value="\n".join(cfg["watchlist"]),
         height=140,
         label_visibility="collapsed",
-        disabled=True,
     )
     st.markdown("##### Trading mode")
     st.radio(
@@ -44,29 +43,26 @@ with col_left:
 
 with col_right:
     st.markdown("##### Risk")
-    st.slider(
+    pos = st.slider(
         "Position size",
         min_value=5,
         max_value=50,
-        value=int(float(cfg["position_size"]) * 100),
-        disabled=True,
+        value=int(round(float(cfg["position_size"]) * 100)),
         format="%d%%",
     )
-    st.slider(
+    freeze = st.slider(
         "Drawdown freeze",
         min_value=5,
         max_value=25,
-        value=int(float(cfg["drawdown_freeze"]) * 100),
-        disabled=True,
+        value=int(round(float(cfg["drawdown_freeze"]) * 100)),
         format="%d%%",
     )
-    st.slider(
+    conf = st.slider(
         "Confidence threshold",
         min_value=0.50,
         max_value=0.80,
         value=float(cfg["confidence_threshold"]),
         step=0.01,
-        disabled=True,
     )
     st.caption(SETTINGS_CONFIDENCE_CAPTION)
 
@@ -75,15 +71,38 @@ with col_right:
             return '<span style="color:#16C784;">Connected</span>'
         return '<span style="color:#848E9C;">Not connected</span>'
 
-    alpaca_ok = bool(os.getenv("ALPACA_API_KEY") and os.getenv("ALPACA_API_SECRET"))
-    finnhub_ok = bool(os.getenv("FINNHUB_API_KEY"))
-    xai_ok = bool(os.getenv("XAI_API_KEY"))
-
     st.markdown("##### Data sources")
-    st.markdown(f"Alpaca: {_status(alpaca_ok)}", unsafe_allow_html=True)
-    st.markdown(f"Finnhub: {_status(finnhub_ok)}", unsafe_allow_html=True)
-    st.markdown(f"xAI/Grok: {_status(xai_ok)}", unsafe_allow_html=True)
+    st.markdown(f"Alpaca: {_status(connected['alpaca'])}", unsafe_allow_html=True)
+    st.markdown(f"Finnhub: {_status(connected['finnhub'])}", unsafe_allow_html=True)
+    st.markdown(f"xAI/Grok: {_status(connected['xai'])}", unsafe_allow_html=True)
 
-st.button("Save", disabled=True)
+if st.button("Save"):
+    lines = [ln.strip().upper() for ln in watch_text.splitlines()]
+    lines = [ln for ln in lines if ln]
+    # dedupe keep first
+    seen: set[str] = set()
+    tickers: list[str] = []
+    for t in lines:
+        if t not in seen:
+            seen.add(t)
+            tickers.append(t)
+    bad = [t for t in tickers if not re.fullmatch(r"[A-Z]{1,5}", t)]
+    if bad:
+        st.markdown(
+            '<div class="tac-banner-error">Check the watchlist: tickers are 1–5 letters, '
+            "one per line.</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        save_settings(
+            tickers,
+            position_size=pos / 100.0,
+            drawdown_freeze=freeze / 100.0,
+            confidence_threshold=float(conf),
+        )
+        st.markdown(
+            f'<span style="color:#16C784;">{SETTINGS_SAVED}</span>',
+            unsafe_allow_html=True,
+        )
+
 st.caption(SETTINGS_APPLY_NOTE)
-st.caption("Skeleton save wiring is H step 6.")
