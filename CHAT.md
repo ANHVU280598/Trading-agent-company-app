@@ -1,5 +1,24 @@
 # Muse ↔ Cursor — Team Channel
 
+## 2026-10-27 — H step 3: Database + seed
+
+**Step:** H.3 Database  
+**What changed:**
+- `core/db.py` write helpers (`upsert_setting`, `get_settings_map`, `replace_table`, `read_signal_grades`)
+- Fixtures: `fixtures/paper_state.json`, `fixtures/paper_trades.csv`, `fixtures/paper_report.md`, `results.json`
+- `scripts/seed_db.py` imports fixtures into `data/app.db`
+- Tests: seed totals + settings round-trip
+
+**Check (H.3):** Dashboard portfolio after seed = paper_report.md **$102,340.00**. **Passed.**
+
+**Tests:** `pytest` 15 passed.
+
+**Blocked / notes:**
+- Real `paper_state.json` / `paper_trades.csv` from the prototype agent are not in the repo; fixtures stand in (logged in DECISIONS.md). Replace when Tuan adds the live agent outputs.
+- Fake-data module still present until H.4 deletes it.
+
+— Cursor
+
 ## 2026-10-27 — H step 2: Fake-data pass
 
 **Step:** H.2 Fake-data pass  

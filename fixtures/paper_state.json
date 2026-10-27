@@ -1,0 +1,30 @@
+{
+  "as_of": "2026-10-27",
+  "start_date": "2026-09-02",
+  "starting_cash": 100000.0,
+  "cash": 61200.0,
+  "high_water": 103500.0,
+  "portfolio_value": 102340.0,
+  "benchmark_value": 100940.0,
+  "drawdown": -0.0112,
+  "buys_frozen": false,
+  "positions": [
+    {"ticker": "AAPL", "shares": 42.125, "avg_cost": 218.4},
+    {"ticker": "MSFT", "shares": 18.5, "avg_cost": 410.0},
+    {"ticker": "NVDA", "shares": 12.0, "avg_cost": 112.2}
+  ],
+  "portfolio_history": [
+    {"date": "2026-09-02", "value": 100000.0, "benchmark_value": 100000.0, "cash": 100000.0, "drawdown": 0.0},
+    {"date": "2026-09-15", "value": 100800.0, "benchmark_value": 100400.0, "cash": 82000.0, "drawdown": 0.0},
+    {"date": "2026-09-30", "value": 101500.0, "benchmark_value": 100700.0, "cash": 70000.0, "drawdown": -0.005},
+    {"date": "2026-10-15", "value": 103500.0, "benchmark_value": 101200.0, "cash": 65000.0, "drawdown": 0.0},
+    {"date": "2026-10-27", "value": 102340.0, "benchmark_value": 100940.0, "cash": 61200.0, "drawdown": -0.0112}
+  ],
+  "signals": [
+    {"date": "2026-10-27", "ticker": "SPY", "signal": "hold", "buy_p": 0.35, "hold_p": 0.44, "sell_p": 0.21, "price": 512.3, "rsi14": 51.0, "drawdown63": -0.012, "sentiment": null, "headline": null},
+    {"date": "2026-10-27", "ticker": "AAPL", "signal": "buy", "buy_p": 0.61, "hold_p": 0.28, "sell_p": 0.11, "price": 227.1, "rsi14": 58.0, "drawdown63": -0.008, "sentiment": 0.42, "headline": "Apple expands AI features in next OS"},
+    {"date": "2026-10-27", "ticker": "MSFT", "signal": "hold", "buy_p": 0.22, "hold_p": 0.55, "sell_p": 0.23, "price": 428.55, "rsi14": 49.0, "drawdown63": -0.015, "sentiment": 0.1, "headline": "Cloud growth steady in quarterly update"},
+    {"date": "2026-10-27", "ticker": "NVDA", "signal": "buy", "buy_p": 0.58, "hold_p": 0.3, "sell_p": 0.12, "price": 141.8, "rsi14": 62.0, "drawdown63": -0.022, "sentiment": 0.55, "headline": "GPU demand remains elevated"},
+    {"date": "2026-10-27", "ticker": "TSLA", "signal": "sell", "buy_p": 0.18, "hold_p": 0.27, "sell_p": 0.55, "price": 248.4, "rsi14": 41.0, "drawdown63": -0.085, "sentiment": -0.35, "headline": "Delivery miss weighs on shares"}
+  ]
+}

@@ -210,3 +210,45 @@ def read_settings(db_path: Path = DB_PATH) -> pd.DataFrame:
     if df.empty:
         return _empty(SETTINGS_COLUMNS)
     return df
+
+
+def read_signal_grades(db_path: Path = DB_PATH) -> pd.DataFrame:
+    init_db(db_path)
+    try:
+        with connect(db_path) as conn:
+            df = pd.read_sql_query(
+                "SELECT * FROM signal_grades ORDER BY date DESC, ticker", conn
+            )
+    except sqlite3.OperationalError:
+        return _empty(SIGNAL_GRADE_COLUMNS)
+    if df.empty:
+        return _empty(SIGNAL_GRADE_COLUMNS)
+    return df
+
+
+def upsert_setting(key: str, value: str, db_path: Path = DB_PATH) -> None:
+    init_db(db_path)
+    with connect(db_path) as conn:
+        conn.execute(
+            "INSERT INTO settings(key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (key, value),
+        )
+        conn.commit()
+
+
+def get_settings_map(db_path: Path = DB_PATH) -> dict[str, str]:
+    df = read_settings(db_path)
+    if df.empty:
+        return {}
+    return {str(r["key"]): str(r["value"]) for _, r in df.iterrows()}
+
+
+def replace_table(table: str, frame: pd.DataFrame, db_path: Path = DB_PATH) -> None:
+    """Replace all rows in a table with the given frame (same columns)."""
+    init_db(db_path)
+    with connect(db_path) as conn:
+        conn.execute(f"DELETE FROM {table}")
+        if not frame.empty:
+            frame.to_sql(table, conn, if_exists="append", index=False)
+        conn.commit()
