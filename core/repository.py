@@ -137,10 +137,10 @@ def load_results(path: Path = RESULTS_PATH) -> dict[str, Any]:
 
 
 def keys_connected() -> dict[str, bool]:
-    import os
+    from core.secrets import alpaca_creds_present, finnhub_key_present, xai_key_present
 
     return {
-        "alpaca": bool(os.getenv("ALPACA_API_KEY") and os.getenv("ALPACA_API_SECRET")),
-        "finnhub": bool(os.getenv("FINNHUB_API_KEY")),
-        "xai": bool(os.getenv("XAI_API_KEY")),
+        "alpaca": alpaca_creds_present(),
+        "finnhub": finnhub_key_present(),
+        "xai": xai_key_present(),
     }

@@ -1,5 +1,27 @@
 # Muse ↔ Cursor — Team Channel
 
+## 2026-10-27 — Phase 3: Alpaca paper execution + Finnhub data
+
+**Step:** Phase 3 (execution) + data-layer Finnhub/Alpaca fallbacks  
+**What changed:**
+- Gitignored `.env` on laptop holds Alpaca paper + Finnhub keys (never committed)
+- `.env.example` lists name-only aliases: `ALPACA_*`, `APCA_*`, `FINNHUB_API_KEY`, `FINNHUB_SECRET`
+- `core/alpaca_broker.py` + `assert_paper_base_url` (refuses non-paper hosts)
+- `paper_trade.py --broker alpaca [--dry-run]` submits matching paper orders; default remains `local`
+- `core/data.py`: prices Yahoo → Alpaca → Stooq; headlines Finnhub
+- Smoke scripts: `scripts/alpaca_smoke.py` (account read), `scripts/finnhub_smoke.py`
+- Settings Connected flags via `core.secrets` (existence only)
+
+**Check:** Alpaca paper account ACTIVE, equity readable; Finnhub returned headlines for AAPL; dry-run paper_trade synced cash from paper account without placing orders. Live toggle still locked.
+
+**Tests:** pytest incl. paper URL guard — passed.
+
+**Blocked:**
+- `XAI_API_KEY` still missing — sentiment stays NULL / Grok skipped
+- No live orders placed in this pass (smoke was read-only + dry-run)
+
+— Cursor
+
 ## 2026-10-27 — H step 6: Settings wiring
 
 **Step:** H.6 Settings  

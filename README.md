@@ -13,7 +13,21 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Optional keys in `.env` (never commit the real file): `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `FINNHUB_API_KEY`, `XAI_API_KEY`.
+Optional keys in `.env` (never commit the real file): `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `FINNHUB_API_KEY`, `XAI_API_KEY`.  
+Aliases also accepted: `APCA_API_KEY_ID`, `APCA_API_SECRET_KEY`, `ALPACA_BASE_URL` / `APCA_API_BASE_URL` (must contain `paper`).
+
+```bash
+# Read-only paper account check
+python scripts/alpaca_smoke.py
+python scripts/finnhub_smoke.py
+
+# Daily agent — local book only (default)
+python paper_trade.py
+
+# Phase 3 — also submit to Alpaca PAPER (use --dry-run first)
+python paper_trade.py --broker alpaca --dry-run
+python paper_trade.py --broker alpaca
+```
 
 ## Seed demo data
 

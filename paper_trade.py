@@ -1,6 +1,7 @@
 """Daily paper agent — reads settings from SQLite, writes signals/trades/portfolio.
 
-Uses Yahoo prices via core.data. No live broker orders. Paper-only.
+Phase 3: with --broker alpaca, submits matching paper orders to Alpaca paper API.
+Live trading is never enabled. Paper-only.
 """
 
 from __future__ import annotations
@@ -12,13 +13,16 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pandas as pd
+from dotenv import load_dotenv
 
 from core.agent import buys_frozen, confidence_gate, position_buy_shares
 from core.config import DB_PATH, ROOT, STARTING_PAPER_CASH
-from core.data import get_daily_bars
+from core.data import get_daily_bars, get_headlines
 from core.features import build_features
 from core.repository import load_settings
 from core import db
+
+load_dotenv(ROOT / ".env")
 
 ET = ZoneInfo("America/New_York")
 STATE_PATH = ROOT / "paper_state.json"
@@ -57,10 +61,40 @@ def portfolio_value(cash: float, positions: dict, prices: dict[str, float]) -> f
     return total
 
 
+def _normalize_positions(state: dict) -> dict[str, dict]:
+    if isinstance(state.get("positions"), list):
+        return {
+            p["ticker"]: {"shares": p["shares"], "avg_cost": p["avg_cost"]}
+            for p in state["positions"]
+        }
+    return dict(state.get("positions") or {})
+
+
+def _submit_alpaca(side: str, ticker: str, shares: float, dry_run: bool) -> str | None:
+    from core.alpaca_broker import AlpacaPaperBroker
+
+    broker = AlpacaPaperBroker()
+    result = broker.submit_market_order(ticker, shares, side, dry_run=dry_run)
+    if dry_run:
+        return "dry-run"
+    return None if result is None else result.id
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", default=None, help="Market date YYYY-MM-DD")
     parser.add_argument("--db", type=Path, default=DB_PATH)
+    parser.add_argument(
+        "--broker",
+        choices=["local", "alpaca"],
+        default="local",
+        help="local = SQLite/JSON only; alpaca = also submit paper orders",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="With --broker alpaca, validate but do not submit orders",
+    )
     args = parser.parse_args()
 
     settings = load_settings(args.db)
@@ -68,30 +102,14 @@ def main() -> None:
     start = (datetime.strptime(as_of, "%Y-%m-%d") - timedelta(days=400)).strftime("%Y-%m-%d")
 
     state = load_state()
-    positions = {
-        p["ticker"] if isinstance(p, dict) else k: (
-            p if isinstance(p, dict) else state["positions"][k]
-        )
-        for k, p in (
-            enumerate(state["positions"])
-            if isinstance(state.get("positions"), list)
-            else state.get("positions", {}).items()
-        )
-    }
-    # Normalize positions to dict[ticker] -> {shares, avg_cost}
-    if isinstance(state.get("positions"), list):
-        positions = {
-            p["ticker"]: {"shares": p["shares"], "avg_cost": p["avg_cost"]}
-            for p in state["positions"]
-        }
-    else:
-        positions = dict(state.get("positions") or {})
+    positions = _normalize_positions(state)
 
     cash = float(state.get("cash", STARTING_PAPER_CASH))
     high_water = float(state.get("high_water", cash))
     prices: dict[str, float] = {}
     signal_rows: list[dict] = []
     new_trades: list[dict] = []
+    broker_notes: list[str] = []
 
     # Prefer a kept model if present; otherwise HOLD everything (honest demo).
     model = None
@@ -103,11 +121,21 @@ def main() -> None:
     except Exception:
         model = None
 
+    # When using Alpaca paper, seed cash from the paper account (read-only sync).
+    if args.broker == "alpaca":
+        from core.alpaca_broker import AlpacaPaperBroker
+
+        acct = AlpacaPaperBroker().get_account()
+        cash = float(acct.cash)
+        high_water = max(high_water, float(acct.equity))
+        broker_notes.append(
+            f"alpaca_paper equity={acct.equity:.2f} cash={acct.cash:.2f} status={acct.status}"
+        )
+
     for ticker in settings["watchlist"]:
         bars = get_daily_bars(ticker, start, as_of)
         if bars.empty:
             continue
-        # Use last available bar on or before as_of
         bars = bars[bars["date"] <= as_of]
         if bars.empty:
             continue
@@ -130,6 +158,8 @@ def main() -> None:
         traded = confidence_gate(raw, conf, settings["confidence_threshold"])
         rsi_val = float(row["rsi14"]) if row is not None else None
         dd63 = float(row["drawdown63"]) if row is not None else None
+        headlines = get_headlines(ticker, as_of)
+        top_headline = headlines[0]["headline"] if headlines else None
         signal_rows.append(
             {
                 "date": as_of,
@@ -141,8 +171,8 @@ def main() -> None:
                 "price": price,
                 "rsi14": rsi_val,
                 "drawdown63": dd63,
-                "sentiment": None,
-                "headline": None,
+                "sentiment": None,  # XAI key still optional
+                "headline": top_headline,
             }
         )
 
@@ -155,6 +185,13 @@ def main() -> None:
                 value, cash, price, settings["position_size"]
             )
             if shares > 0:
+                if args.broker == "alpaca":
+                    try:
+                        oid = _submit_alpaca("buy", ticker, shares, args.dry_run)
+                        broker_notes.append(f"buy {ticker} qty={shares} order={oid}")
+                    except Exception as exc:
+                        broker_notes.append(f"buy {ticker} SKIP: {exc}")
+                        continue
                 cost = shares * price
                 cash -= cost
                 positions[ticker] = {"shares": shares, "avg_cost": price}
@@ -170,17 +207,28 @@ def main() -> None:
                         "realized_pnl": None,
                     }
                 )
+            else:
+                broker_notes.append(f"buy {ticker} skipped: cash under $10 or size 0")
         elif traded == "sell" and ticker in positions:
-            pos = positions.pop(ticker)
-            proceeds = float(pos["shares"]) * price
-            pnl = proceeds - float(pos["shares"]) * float(pos["avg_cost"])
+            pos = positions[ticker]
+            shares = float(pos["shares"])
+            if args.broker == "alpaca":
+                try:
+                    oid = _submit_alpaca("sell", ticker, shares, args.dry_run)
+                    broker_notes.append(f"sell {ticker} qty={shares} order={oid}")
+                except Exception as exc:
+                    broker_notes.append(f"sell {ticker} SKIP: {exc}")
+                    continue
+            positions.pop(ticker)
+            proceeds = shares * price
+            pnl = proceeds - shares * float(pos["avg_cost"])
             cash += proceeds
             new_trades.append(
                 {
                     "date": as_of,
                     "ticker": ticker,
                     "action": "sell",
-                    "shares": float(pos["shares"]),
+                    "shares": shares,
                     "price": price,
                     "confidence": conf,
                     "status": "Closed",
@@ -283,6 +331,7 @@ def main() -> None:
             log_trades(new_trades)
         conn.commit()
 
+    notes_block = "\n".join(f"- {n}" for n in broker_notes) if broker_notes else "- (none)"
     REPORT_PATH.write_text(
         f"# Paper report — {as_of}\n\n"
         f"| Metric | Value |\n|--------|-------|\n"
@@ -290,10 +339,17 @@ def main() -> None:
         f"| Benchmark value | ${bench:,.2f} |\n"
         f"| Cash | ${cash:,.2f} |\n"
         f"| Drawdown from high | {dd * 100:.1f}% |\n"
-        f"| Position size setting | {settings['position_size'] * 100:.0f}% |\n",
+        f"| Position size setting | {settings['position_size'] * 100:.0f}% |\n"
+        f"| Broker | {args.broker}{' dry-run' if args.dry_run else ''} |\n\n"
+        f"## Broker notes\n{notes_block}\n",
         encoding="utf-8",
     )
-    print(f"paper_trade {as_of}: value=${value:,.2f} cash=${cash:,.2f} trades={len(new_trades)}")
+    print(
+        f"paper_trade {as_of}: broker={args.broker} value=${value:,.2f} "
+        f"cash=${cash:,.2f} trades={len(new_trades)}"
+    )
+    for note in broker_notes:
+        print(f"  {note}")
 
 
 if __name__ == "__main__":

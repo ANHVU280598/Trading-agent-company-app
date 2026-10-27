@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from dotenv import load_dotenv
 import streamlit as st
 
 from core.ui import configure_app, render_sidebar_brand, render_sidebar_refresh
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent / ".env")
 configure_app()
 render_sidebar_brand()
 

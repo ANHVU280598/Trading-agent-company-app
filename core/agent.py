@@ -3,6 +3,23 @@
 from __future__ import annotations
 
 
+def assert_paper_base_url(base_url: str) -> None:
+    """Refuse to run unless the broker base URL is clearly a paper endpoint.
+
+    Spec section L: configured base URL must contain \"paper\".
+    """
+    url = (base_url or "").strip().lower()
+    if "paper" not in url:
+        raise RuntimeError(
+            "Refusing to start: broker base URL must contain 'paper' "
+            "(paper-only Phase 3). Live trading is locked."
+        )
+    if "alpaca.markets" in url and "paper-api" not in url:
+        raise RuntimeError(
+            "Refusing to start: Alpaca live API host is not allowed in Phase 3."
+        )
+
+
 def confidence_gate(
     signal: str,
     confidence: float,
