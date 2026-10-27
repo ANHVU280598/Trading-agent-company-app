@@ -1,5 +1,9 @@
 .env
 data/app.db
+paper_state.json
+paper_trades.csv
+paper_report.md
+model.joblib
 __pycache__/
 .venv/
 venv/

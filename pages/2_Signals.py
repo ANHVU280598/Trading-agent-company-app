@@ -1,34 +1,35 @@
-"""Signals — fake-data pass (H step 2)."""
+"""Signals — SQLite + optional Yahoo price chart (H step 4)."""
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
+import pandas as pd
 import streamlit as st
 
-from core import fake_data
 from core.charts import price_with_markers
-from core.components import (
-    prob_bars,
-    sample_data_line,
-    sentiment_html,
-    signal_badge,
-)
+from core.components import prob_bars, sentiment_html, signal_badge
 from core.config import SIGNAL_NOTE
+from core.data import get_daily_bars
 from core.formatters import conf_pct, money, pct
-from core.ui import empty_panel, page_heading
+from core.repository import latest_signals, load_settings
+from core.ui import empty_panel, error_banner, page_heading
+from core import db
 
 page_heading("Signals")
-sample_data_line()
 
-signals = fake_data.signals_latest()
-st.markdown(
-    f'<div class="tac-muted" style="text-transform:none;letter-spacing:0;margin-bottom:12px;">'
-    f'Signals for {fake_data.SAMPLE_AS_OF} (last close)</div>',
-    unsafe_allow_html=True,
-)
+with st.spinner("Loading latest data…"):
+    signals = latest_signals()
 
 if signals.empty:
     empty_panel("No signals yet. Run paper_trade.py once, then refresh.")
 else:
+    as_of = str(signals.iloc[0]["date"])
+    st.markdown(
+        f'<div class="tac-muted" style="text-transform:none;letter-spacing:0;margin-bottom:12px;">'
+        f"Signals for {as_of} (last close)</div>",
+        unsafe_allow_html=True,
+    )
     tickers = [str(t) for t in signals["ticker"].tolist()]
     selected = st.selectbox("Ticker detail", tickers, index=0)
 
@@ -43,6 +44,9 @@ else:
     body = []
     for _, row in signals.iterrows():
         conf = max(float(row["buy_p"]), float(row["hold_p"]), float(row["sell_p"]))
+        sent = row["sentiment"]
+        sent_val = None if sent is None or (isinstance(sent, float) and sent != sent) else float(sent)
+        headline = row["headline"] if isinstance(row["headline"], str) and row["headline"] else "—"
         body.append(
             "<tr>"
             f"<td>{row['ticker']}</td>"
@@ -52,8 +56,8 @@ else:
             f"<td class='tac-num'>{money(float(row['price']))}</td>"
             f"<td class='tac-num'>{float(row['rsi14']):.0f}</td>"
             f"<td class='tac-num'>{pct(float(row['drawdown63']))}</td>"
-            f"<td>{sentiment_html(None if row['sentiment'] is None else float(row['sentiment']))}</td>"
-            f"<td>{row['headline']}</td>"
+            f"<td>{sentiment_html(sent_val)}</td>"
+            f"<td>{headline}</td>"
             "</tr>"
         )
     st.markdown(
@@ -61,22 +65,64 @@ else:
         f"{header}{''.join(body)}</table></div>",
         unsafe_allow_html=True,
     )
-
     st.caption(SIGNAL_NOTE)
 
-    st.markdown(f'<div class="tac-section">Ticker detail: {selected}</div>', unsafe_allow_html=True)
-    prices = fake_data.price_history(selected)
-    markers = fake_data.signal_history(selected)
-    st.plotly_chart(
-        price_with_markers(prices, markers),
-        use_container_width=True,
-        config={"displayModeBar": False},
+    st.markdown(
+        f'<div class="tac-section">Ticker detail: {selected}</div>',
+        unsafe_allow_html=True,
     )
+    end = as_of
+    start = (datetime.strptime(as_of, "%Y-%m-%d") - timedelta(days=200)).strftime("%Y-%m-%d")
+    try:
+        prices = get_daily_bars(selected, start, end)
+        if prices.empty:
+            error_banner(as_of)
+            prices = pd.DataFrame(columns=["date", "close"])
+    except Exception:
+        error_banner(as_of)
+        prices = pd.DataFrame(columns=["date", "close"])
 
-    feats = fake_data.feature_values(selected)
-    left, right = st.columns(2)
+    hist_signals = db.read_signals()
+    markers = hist_signals[
+        (hist_signals["ticker"] == selected)
+        & (hist_signals["signal"].isin(["buy", "sell"]))
+    ][["date", "signal", "price"]]
+    if not prices.empty:
+        st.plotly_chart(
+            price_with_markers(prices[["date", "close"]], markers),
+            use_container_width=True,
+            config={"displayModeBar": False},
+        )
+        quality = getattr(prices, "attrs", {}).get("data_quality", "")
+        if quality:
+            st.caption(f"Data quality: {quality}")
 
-    def _fmt_feat(name: str, value: object) -> str:
+    # Feature values from latest signal row + placeholders for full set
+    row = signals[signals["ticker"] == selected].iloc[0]
+    feats = {
+        "ret1": None,
+        "ret5": None,
+        "ret21": None,
+        "vol21": None,
+        "rsi14": float(row["rsi14"]),
+        "dist_ma50": None,
+        "drawdown63": float(row["drawdown63"]),
+        "volz": None,
+        "sentiment": None
+        if row["sentiment"] is None or (isinstance(row["sentiment"], float) and row["sentiment"] != row["sentiment"])
+        else float(row["sentiment"]),
+        "spy_regime": "—",
+    }
+    if not prices.empty and len(prices) > 63:
+        from core.features import build_features
+
+        built = build_features(prices.set_index("date")).dropna()
+        if not built.empty:
+            last = built.iloc[-1]
+            for k in ["ret1", "ret5", "ret21", "vol21", "rsi14", "dist_ma50", "drawdown63", "volz"]:
+                feats[k] = float(last[k])
+
+    def _fmt(name: str, value: object) -> str:
         if value is None:
             return "—"
         if name in {"ret1", "ret5", "ret21", "dist_ma50", "drawdown63", "vol21"}:
@@ -89,17 +135,20 @@ else:
             return f"{float(value):.2f}"
         return str(value)
 
+    left, right = st.columns(2)
     items = list(feats.items())
     mid = (len(items) + 1) // 2
     with left:
         for k, v in items[:mid]:
             st.markdown(
-                f'<div class="tac-muted">{k}</div><div class="tac-body tac-num">{_fmt_feat(k, v)}</div>',
+                f'<div class="tac-muted">{k}</div><div class="tac-body tac-num">{_fmt(k, v)}</div>',
                 unsafe_allow_html=True,
             )
     with right:
         for k, v in items[mid:]:
             st.markdown(
-                f'<div class="tac-muted">{k}</div><div class="tac-body tac-num">{_fmt_feat(k, v)}</div>',
+                f'<div class="tac-muted">{k}</div><div class="tac-body tac-num">{_fmt(k, v)}</div>',
                 unsafe_allow_html=True,
             )
+
+_ = load_settings  # settings available for watchlist order via latest_signals

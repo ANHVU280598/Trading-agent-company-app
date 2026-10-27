@@ -1,19 +1,22 @@
-"""Trades — fake-data pass (H step 2)."""
+"""Trades — SQLite (H step 4)."""
 
 from __future__ import annotations
 
 import streamlit as st
 
-from core import fake_data
-from core.components import colored_pnl, kpi_card, sample_data_line, signal_badge
+from core import db
+from core.components import colored_pnl, kpi_card, signal_badge
 from core.formatters import conf_pct, money
+from core.repository import load_settings
 from core.ui import empty_panel, page_heading
 
 page_heading("Trades")
-sample_data_line()
 
-trades = fake_data.trades().copy()
-tickers = ["All"] + fake_data.WATCHLIST
+with st.spinner("Loading latest data…"):
+    trades = db.read_trades()
+    settings = load_settings()
+
+tickers = ["All"] + settings["watchlist"]
 actions = ["All", "Buy", "Sell"]
 
 f1, f2, f3, f4 = st.columns(4)
@@ -26,15 +29,16 @@ with f3:
 with f4:
     date_to = st.date_input("To", value=None)
 
-filtered = trades
-if ticker_f != "All":
-    filtered = filtered[filtered["ticker"] == ticker_f]
-if action_f != "All":
-    filtered = filtered[filtered["action"] == action_f.lower()]
-if date_from is not None:
-    filtered = filtered[filtered["date"] >= date_from.isoformat()]
-if date_to is not None:
-    filtered = filtered[filtered["date"] <= date_to.isoformat()]
+filtered = trades.copy()
+if not filtered.empty:
+    if ticker_f != "All":
+        filtered = filtered[filtered["ticker"] == ticker_f]
+    if action_f != "All":
+        filtered = filtered[filtered["action"] == action_f.lower()]
+    if date_from is not None:
+        filtered = filtered[filtered["date"] >= date_from.isoformat()]
+    if date_to is not None:
+        filtered = filtered[filtered["date"] <= date_to.isoformat()]
 
 if trades.empty:
     empty_panel("No trades yet. The agent is watching.")
@@ -81,7 +85,11 @@ else:
     rows = []
     for _, t in show.iterrows():
         pnl = t["realized_pnl"]
-        pnl_html = "—" if pnl is None or (isinstance(pnl, float) and pnl != pnl) else colored_pnl(float(pnl))
+        pnl_html = (
+            "—"
+            if pnl is None or (isinstance(pnl, float) and pnl != pnl)
+            else colored_pnl(float(pnl))
+        )
         rows.append(
             "<tr>"
             f"<td>{t['date']}</td>"
