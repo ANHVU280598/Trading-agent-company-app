@@ -160,6 +160,16 @@ def main() -> None:
         dd63 = float(row["drawdown63"]) if row is not None else None
         headlines = get_headlines(ticker, as_of)
         top_headline = headlines[0]["headline"] if headlines else None
+        sentiment: float | None = None
+        if top_headline:
+            try:
+                from news_sentiment import score_headlines
+
+                sentiment = score_headlines(
+                    ticker, [h["headline"] for h in headlines[:3]]
+                )
+            except Exception:
+                sentiment = None
         signal_rows.append(
             {
                 "date": as_of,
@@ -171,7 +181,7 @@ def main() -> None:
                 "price": price,
                 "rsi14": rsi_val,
                 "drawdown63": dd63,
-                "sentiment": None,  # XAI key still optional
+                "sentiment": sentiment,
                 "headline": top_headline,
             }
         )

@@ -1,5 +1,23 @@
 # Muse ↔ Cursor — Team Channel
 
+## 2026-10-27 — xAI/Grok sentiment wired
+
+**Step:** Wire Grok news sentiment (addendum §6)  
+**What changed:**
+- Gitignored `.env` now includes `XAI_API_KEY` (never committed; value not written here)
+- `news_sentiment.py`: Grok-only chat completions, `<external>` wrap, system-prompt injection guard, soft-fail on 429
+- `paper_trade.py` scores Finnhub headlines via Grok when key present; stores sentiment on signals
+- `scripts/xai_smoke.py` cheap one-headline check
+- Settings xAI/Grok Connected via existence check
+
+**Check:** Smoke sentiment call returned a score in [-1, 1]. keys_connected alpaca/finnhub/xai all true. Live toggle still locked.
+
+**Tests:** pytest incl. injection wrap + missing-key → None. **Passed.**
+
+**Blocked:** none for connectivity; Phase 4 (sentiment as model feature + regime) still a later brief.
+
+— Cursor
+
 ## 2026-10-27 — Phase 3: Alpaca paper execution + Finnhub data
 
 **Step:** Phase 3 (execution) + data-layer Finnhub/Alpaca fallbacks  
