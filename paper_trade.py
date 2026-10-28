@@ -158,18 +158,36 @@ def main() -> None:
         traded = confidence_gate(raw, conf, settings["confidence_threshold"])
         rsi_val = float(row["rsi14"]) if row is not None else None
         dd63 = float(row["drawdown63"]) if row is not None else None
-        headlines = get_headlines(ticker, as_of)
-        top_headline = headlines[0]["headline"] if headlines else None
+        # Phase 4 Step 1: score the day that just closed into news_sentiment (idempotent).
         sentiment: float | None = None
-        if top_headline:
-            try:
-                from news_sentiment import score_headlines
+        top_headline = None
+        try:
+            from news_sentiment import score_day
 
-                sentiment = score_headlines(
-                    ticker, [h["headline"] for h in headlines[:3]]
-                )
-            except Exception:
-                sentiment = None
+            if not db.has_news_sentiment(as_of, ticker, args.db):
+                scored = score_day(ticker, as_of)
+                if scored.ok and scored.days:
+                    row_s = scored.days[0]
+                    db.insert_news_sentiment(
+                        row_s.date,
+                        ticker,
+                        row_s.sentiment,
+                        row_s.headline_count,
+                        row_s.summary,
+                        row_s.source,
+                        args.db,
+                    )
+            # Read cached row for signal fields
+            ns = db.read_news_sentiment(args.db)
+            match = ns[(ns["date"] == as_of) & (ns["ticker"] == ticker)]
+            if not match.empty:
+                sentiment = float(match.iloc[0]["sentiment"])
+                summary = str(match.iloc[0]["summary"] or "")
+                top_headline = None if summary == "No news." else summary
+        except Exception:
+            # Fall back to Finnhub headline display only
+            headlines = get_headlines(ticker, as_of)
+            top_headline = headlines[0]["headline"] if headlines else None
         signal_rows.append(
             {
                 "date": as_of,

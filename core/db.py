@@ -126,6 +126,15 @@ def init_db(db_path: Path = DB_PATH) -> None:
         spy_ret_20d REAL,
         PRIMARY KEY (date, ticker)
     );
+    CREATE TABLE IF NOT EXISTS news_sentiment (
+        date TEXT NOT NULL,
+        ticker TEXT NOT NULL,
+        sentiment REAL,
+        headline_count INTEGER,
+        summary TEXT,
+        source TEXT,
+        PRIMARY KEY (date, ticker)
+    );
     """
     with connect(db_path) as conn:
         conn.executescript(schema)
@@ -252,3 +261,62 @@ def replace_table(table: str, frame: pd.DataFrame, db_path: Path = DB_PATH) -> N
         if not frame.empty:
             frame.to_sql(table, conn, if_exists="append", index=False)
         conn.commit()
+
+
+NEWS_SENTIMENT_COLUMNS = [
+    "date",
+    "ticker",
+    "sentiment",
+    "headline_count",
+    "summary",
+    "source",
+]
+
+
+def read_news_sentiment(db_path: Path = DB_PATH) -> pd.DataFrame:
+    init_db(db_path)
+    try:
+        with connect(db_path) as conn:
+            df = pd.read_sql_query(
+                "SELECT * FROM news_sentiment ORDER BY date, ticker", conn
+            )
+    except sqlite3.OperationalError:
+        return _empty(NEWS_SENTIMENT_COLUMNS)
+    if df.empty:
+        return _empty(NEWS_SENTIMENT_COLUMNS)
+    return df
+
+
+def has_news_sentiment(date: str, ticker: str, db_path: Path = DB_PATH) -> bool:
+    init_db(db_path)
+    with connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT 1 FROM news_sentiment WHERE date=? AND ticker=? LIMIT 1",
+            (date, ticker.upper()),
+        ).fetchone()
+    return row is not None
+
+
+def insert_news_sentiment(
+    date: str,
+    ticker: str,
+    sentiment: float,
+    headline_count: int,
+    summary: str,
+    source: str,
+    db_path: Path = DB_PATH,
+) -> bool:
+    """Insert one row. Returns False if already present (never re-score)."""
+    init_db(db_path)
+    with connect(db_path) as conn:
+        try:
+            conn.execute(
+                "INSERT INTO news_sentiment(date, ticker, sentiment, headline_count, summary, source) "
+                "VALUES (?,?,?,?,?,?)",
+                (date, ticker.upper(), sentiment, headline_count, summary, source),
+            )
+            conn.commit()
+            return True
+        except sqlite3.IntegrityError:
+            return False
+

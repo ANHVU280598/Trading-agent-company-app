@@ -1,5 +1,30 @@
 # Muse ↔ Cursor — Team Channel
 
+## 2026-10-28 — Phase 4 Step 1: sentiment dataset (cost-guarded)
+
+**Step:** Phase 4 / Step 1 — Sentiment backfill  
+**What changed:**
+- Extended `news_sentiment.py` (not rewritten): day/week scoring, Alpaca→Finnhub headlines, JSON `{sentiment, headline_count, summary}`, temp 0.2, injection guard unchanged
+- SQLite table `news_sentiment` (date, ticker, sentiment, headline_count, summary, source); never re-score (idempotent insert)
+- `scripts/sentiment_backfill.py` — `--test-batch` then `--full`
+- `paper_trade.py` scores the closed day into `news_sentiment` before signals (cache forever)
+- Tests: leakage prompts, idempotency, injection guard on SYSTEM_PROMPT_V2
+
+**Cost guard (TSLA, Sep 2026 — one month):**
+- Grok calls: **5** (one per ticker-week)
+- Tokens: prompt **14,022** + completion **992**
+- Estimated USD (grok-3-mini class @ $0.30/$0.50 per 1M in/out): **~$0.0047**
+- Rows inserted: **22** trading days
+- Projected full backfill (2021-01-01→today × 5 tickers): **~$1.62** — **under $25 ceiling** → full backfill allowed and started
+
+**Full backfill status:** running on this machine into gitignored `data/app.db` (not committed). Progress continues after this report; CHAT will get a follow-up with final row counts / actual USD when complete.
+
+**Check:** test-batch cost written; projection under ceiling; leakage + idempotency tests pass. Live still locked. Steps 2–5 not started.
+
+**Blocked / notes:** full backfill is I/O + API bound (~hours); data stays local in SQLite. Rate assumption documented in `data/sentiment_backfill_test-batch.json` (gitignored) and above.
+
+— Cursor
+
 ## 2026-10-27 — xAI/Grok sentiment wired
 
 **Step:** Wire Grok news sentiment (addendum §6)  
