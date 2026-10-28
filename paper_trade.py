@@ -18,7 +18,8 @@ from dotenv import load_dotenv
 from core.agent import buys_frozen, confidence_gate, position_buy_shares
 from core.config import DB_PATH, ROOT, STARTING_PAPER_CASH
 from core.data import get_daily_bars, get_headlines
-from core.features import build_features
+from core.features import build_features, build_features_v2
+from core.model_store import load_active_model
 from core.repository import load_settings
 from core import db
 
@@ -111,15 +112,23 @@ def main() -> None:
     new_trades: list[dict] = []
     broker_notes: list[str] = []
 
-    # Prefer a kept model if present; otherwise HOLD everything (honest demo).
+    # Phase 4: load gated artifact (v2 if Kept, else v1). Legacy model.joblib fallback.
     model = None
+    model_version = "none"
+    model_meta: dict = {}
     try:
-        import joblib
+        model, model_meta, model_version = load_active_model()
+        if model is None and MODEL_PATH.exists():
+            import joblib
 
-        if MODEL_PATH.exists():
             model = joblib.load(MODEL_PATH)
+            model_version = "legacy"
     except Exception:
         model = None
+    broker_notes.append(f"model={model_version}")
+
+    spy_bars = get_daily_bars("SPY", start, as_of)
+    spy_bars = spy_bars[spy_bars["date"] <= as_of] if not spy_bars.empty else spy_bars
 
     # When using Alpaca paper, seed cash from the paper account (read-only sync).
     if args.broker == "alpaca":
@@ -142,24 +151,10 @@ def main() -> None:
         last = bars.iloc[-1]
         price = float(last["close"])
         prices[ticker] = price
-        feats = build_features(bars.set_index("date"))
-        row = feats.dropna().iloc[-1] if not feats.dropna().empty else None
-        buy_p = hold_p = sell_p = 1 / 3
-        raw = "hold"
-        if model is not None and row is not None:
-            proba = model.predict_proba([row[list(model.feature_names_in_)]])[0]
-            classes = list(model.classes_)
-            mapping = {c: float(p) for c, p in zip(classes, proba)}
-            buy_p = mapping.get("buy", 0.0)
-            hold_p = mapping.get("hold", 0.0)
-            sell_p = mapping.get("sell", 0.0)
-            raw = max(mapping, key=mapping.get)  # type: ignore[arg-type]
-        conf = max(buy_p, hold_p, sell_p)
-        traded = confidence_gate(raw, conf, settings["confidence_threshold"])
-        rsi_val = float(row["rsi14"]) if row is not None else None
-        dd63 = float(row["drawdown63"]) if row is not None else None
+
         # Phase 4 Step 1: score the day that just closed into news_sentiment (idempotent).
         sentiment: float | None = None
+        headline_count = 0
         top_headline = None
         try:
             from news_sentiment import score_day
@@ -177,17 +172,62 @@ def main() -> None:
                         row_s.source,
                         args.db,
                     )
-            # Read cached row for signal fields
             ns = db.read_news_sentiment(args.db)
             match = ns[(ns["date"] == as_of) & (ns["ticker"] == ticker)]
             if not match.empty:
                 sentiment = float(match.iloc[0]["sentiment"])
+                headline_count = int(match.iloc[0]["headline_count"] or 0)
                 summary = str(match.iloc[0]["summary"] or "")
                 top_headline = None if summary == "No news." else summary
         except Exception:
-            # Fall back to Finnhub headline display only
             headlines = get_headlines(ticker, as_of)
             top_headline = headlines[0]["headline"] if headlines else None
+
+        indexed = bars.set_index("date")
+        indexed.index = indexed.index.astype(str)
+        use_v2 = model_version == "v2" or (
+            model is not None
+            and hasattr(model, "feature_names_in_")
+            and "sentiment" in list(model.feature_names_in_)
+        )
+        if use_v2 and not spy_bars.empty:
+            import pandas as pd
+
+            sent_s = pd.Series(
+                {as_of: sentiment if sentiment is not None else 0.0}
+            )
+            hc_s = pd.Series({as_of: float(headline_count)})
+            # full history series for join
+            ns_all = db.read_news_sentiment(args.db)
+            sub = ns_all[ns_all["ticker"] == ticker] if not ns_all.empty else ns_all
+            if not sub.empty:
+                sent_s = sub.set_index("date")["sentiment"]
+                hc_s = sub.set_index("date")["headline_count"]
+                sent_s.index = sent_s.index.astype(str)
+                hc_s.index = hc_s.index.astype(str)
+            feats = build_features_v2(indexed, spy_bars, sentiment=sent_s, headline_count=hc_s)
+        else:
+            feats = build_features(indexed)
+
+        row = feats.dropna().iloc[-1] if not feats.dropna().empty else None
+        buy_p = hold_p = sell_p = 1 / 3
+        raw = "hold"
+        if model is not None and row is not None:
+            cols = list(model.feature_names_in_)
+            proba = model.predict_proba([row[cols]])[0]
+            classes = list(model.classes_)
+            mapping = {c: float(p) for c, p in zip(classes, proba)}
+            buy_p = mapping.get("buy", 0.0)
+            hold_p = mapping.get("hold", 0.0)
+            sell_p = mapping.get("sell", 0.0)
+            raw = max(mapping, key=mapping.get)  # type: ignore[arg-type]
+        conf = max(buy_p, hold_p, sell_p)
+        traded = confidence_gate(raw, conf, settings["confidence_threshold"])
+        rsi_val = float(row["rsi14"]) if row is not None else None
+        dd63 = float(row["drawdown63"]) if row is not None else None
+        spy_regime_val = None
+        if row is not None and "spy_regime" in row.index:
+            spy_regime_val = int(row["spy_regime"])
         signal_rows.append(
             {
                 "date": as_of,
@@ -201,6 +241,8 @@ def main() -> None:
                 "drawdown63": dd63,
                 "sentiment": sentiment,
                 "headline": top_headline,
+                "headline_count": headline_count,
+                "spy_regime": spy_regime_val,
             }
         )
 
@@ -303,7 +345,8 @@ def main() -> None:
         for row in signal_rows:
             conn.execute(
                 "INSERT OR REPLACE INTO signals(date, ticker, signal, buy_p, hold_p, sell_p, "
-                "price, rsi14, drawdown63, sentiment, headline) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                "price, rsi14, drawdown63, sentiment, headline, headline_count, spy_regime) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     row["date"],
                     row["ticker"],
@@ -316,6 +359,8 @@ def main() -> None:
                     row["drawdown63"],
                     row["sentiment"],
                     row["headline"],
+                    row.get("headline_count"),
+                    row.get("spy_regime"),
                 ),
             )
             conn.execute(

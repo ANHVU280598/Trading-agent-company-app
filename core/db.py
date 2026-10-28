@@ -21,6 +21,8 @@ SIGNAL_COLUMNS = [
     "drawdown63",
     "sentiment",
     "headline",
+    "headline_count",
+    "spy_regime",
 ]
 TRADE_COLUMNS = [
     "id",
@@ -75,6 +77,8 @@ def init_db(db_path: Path = DB_PATH) -> None:
         drawdown63 REAL,
         sentiment REAL,
         headline TEXT,
+        headline_count INTEGER,
+        spy_regime INTEGER,
         PRIMARY KEY (date, ticker)
     );
     CREATE TABLE IF NOT EXISTS trades (
@@ -138,6 +142,15 @@ def init_db(db_path: Path = DB_PATH) -> None:
     """
     with connect(db_path) as conn:
         conn.executescript(schema)
+        # Phase 4 Step 5: additive columns on existing DBs
+        cols = {
+            str(r[1])
+            for r in conn.execute("PRAGMA table_info(signals)").fetchall()
+        }
+        if "headline_count" not in cols:
+            conn.execute("ALTER TABLE signals ADD COLUMN headline_count INTEGER")
+        if "spy_regime" not in cols:
+            conn.execute("ALTER TABLE signals ADD COLUMN spy_regime INTEGER")
         conn.commit()
 
 

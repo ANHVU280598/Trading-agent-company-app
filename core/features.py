@@ -1,11 +1,13 @@
-"""Feature engineering. Formulas must match train.py / paper_trade.py (later)."""
+"""Feature engineering. Formulas must match train.py / paper_trade.py."""
 
 from __future__ import annotations
+
+from typing import Optional
 
 import pandas as pd
 
 
-FEATURE_ORDER: list[str] = [
+FEATURE_ORDER_V1: list[str] = [
     "ret1",
     "ret5",
     "ret21",
@@ -15,6 +17,17 @@ FEATURE_ORDER: list[str] = [
     "drawdown63",
     "volz",
 ]
+
+# Phase 4 exact order
+FEATURE_ORDER_V2: list[str] = FEATURE_ORDER_V1 + [
+    "sentiment",
+    "headline_count",
+    "spy_regime",
+    "rs21",
+]
+
+# Back-compat alias used by existing imports
+FEATURE_ORDER = FEATURE_ORDER_V1
 
 
 def rsi(series: pd.Series, period: int = 14) -> pd.Series:
@@ -29,12 +42,8 @@ def rsi(series: pd.Series, period: int = 14) -> pd.Series:
 
 
 def build_features(prices: pd.DataFrame) -> pd.DataFrame:
-    """Build the 8 prototype features from a close/volume frame.
-
-    Skeleton: returns an empty frame with the right columns when input is empty.
-    Full parity with train.py is enforced in H step tests.
-    """
-    cols = FEATURE_ORDER.copy()
+    """Build the 8 prototype (v1) features from a close/volume frame."""
+    cols = FEATURE_ORDER_V1.copy()
     if prices is None or prices.empty:
         return pd.DataFrame(columns=cols)
     out = pd.DataFrame(index=prices.index)
@@ -57,17 +66,66 @@ def build_features(prices: pd.DataFrame) -> pd.DataFrame:
 
 
 def make_labels(prices: pd.DataFrame, buy_th: float = 0.03, sell_th: float = -0.03) -> pd.Series:
-    """Hindsight label rule: forward 5-day return vs ±0.03 thresholds.
-
-    Exactly +3.0% is hold (not buy). Exactly -3.0% is hold (not sell).
-    """
+    """Hindsight label rule: forward 5-day return vs ±0.03 thresholds."""
     if prices is None or prices.empty:
         return pd.Series(dtype="object")
     close = prices["close"].astype(float)
-    # Round so exact ±3.0% boundaries are hold (float 103/100-1 is not 0.03).
     forward = (close.shift(-5) / close - 1.0).round(10)
     labels = pd.Series("hold", index=prices.index, dtype="object")
     labels = labels.mask(forward > buy_th, "buy")
     labels = labels.mask(forward < sell_th, "sell")
     labels.iloc[-5:] = pd.NA
     return labels
+
+
+def spy_regime_series(spy_close: pd.Series) -> pd.Series:
+    """1 if SPY close > 50-day MA, else 0."""
+    ma50 = spy_close.astype(float).rolling(50).mean()
+    return (spy_close.astype(float) > ma50).astype(float)
+
+
+def build_features_v2(
+    prices: pd.DataFrame,
+    spy_prices: pd.DataFrame,
+    sentiment: Optional[pd.Series] = None,
+    headline_count: Optional[pd.Series] = None,
+) -> pd.DataFrame:
+    """v1 features + sentiment, headline_count, spy_regime, rs21.
+
+    Missing sentiment → 0.0; missing headline_count → 0 (No news.).
+    spy_regime / rs21 use only price data known at the close.
+    """
+    base = build_features(prices)
+    if base.empty:
+        return pd.DataFrame(columns=FEATURE_ORDER_V2)
+
+    out = base.copy()
+    idx = out.index.astype(str)
+
+    if sentiment is None:
+        out["sentiment"] = 0.0
+    else:
+        aligned = sentiment.reindex(idx)
+        out["sentiment"] = aligned.fillna(0.0).astype(float).values
+
+    if headline_count is None:
+        out["headline_count"] = 0.0
+    else:
+        aligned_c = headline_count.reindex(idx)
+        out["headline_count"] = aligned_c.fillna(0.0).astype(float).values
+
+    spy = spy_prices.copy()
+    if "date" in spy.columns:
+        spy = spy.set_index("date")
+    spy_close = spy["close"].astype(float)
+    spy_close.index = spy_close.index.astype(str)
+    regime = spy_regime_series(spy_close).reindex(idx)
+    out["spy_regime"] = regime.fillna(0.0).astype(float).values
+
+    ticker_ret21 = prices["close"].astype(float).pct_change(21)
+    ticker_ret21.index = ticker_ret21.index.astype(str)
+    spy_ret21 = spy_close.pct_change(21).reindex(idx)
+    rs = ticker_ret21.reindex(idx) - spy_ret21
+    out["rs21"] = rs.astype(float).values
+
+    return out[FEATURE_ORDER_V2]
