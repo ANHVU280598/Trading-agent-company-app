@@ -22,6 +22,7 @@ from core.config import (
 
 ET = ZoneInfo("America/New_York")
 RESULTS_PATH = ROOT / "results.json"
+V1_V2_REPORT_PATH = ROOT / "models" / "v1_vs_v2_report.json"
 V1_V3_REPORT_PATH = ROOT / "models" / "v1_vs_v3_report.json"
 ACTIVE_MODEL_PATH = ROOT / "models" / "active_model.json"
 
@@ -133,6 +134,12 @@ def save_settings(
 
 
 def load_results(path: Path = RESULTS_PATH) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def load_v1_v2_report(path: Path = V1_V2_REPORT_PATH) -> dict[str, Any]:
     if not path.exists():
         return {}
     return json.loads(path.read_text(encoding="utf-8"))

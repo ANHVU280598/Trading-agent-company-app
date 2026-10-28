@@ -19,7 +19,7 @@ from core.agent import buys_frozen, confidence_gate, position_buy_shares
 from core.config import DB_PATH, ROOT, STARTING_PAPER_CASH
 from core.data import get_daily_bars, get_headlines
 from core.events_calendar import load_events_csv
-from core.features import build_features, build_features_v3
+from core.features import build_features, build_features_v2, build_features_v3
 from core.model_store import load_active_model
 from core.repository import load_settings
 from core import db
@@ -113,11 +113,12 @@ def main() -> None:
     new_trades: list[dict] = []
     broker_notes: list[str] = []
 
-    # Gated artifact (v3 if Kept, else v1). Legacy model.joblib fallback.
+    # Gated artifact (v2/v3 if Kept, else v1). Legacy model.joblib fallback.
     model = None
     model_version = "none"
+    model_meta: dict = {}
     try:
-        model, _meta, model_version = load_active_model()
+        model, model_meta, model_version = load_active_model()
         if model is None and MODEL_PATH.exists():
             import joblib
 
@@ -126,12 +127,16 @@ def main() -> None:
     except Exception:
         model = None
     broker_notes.append(f"model={model_version}")
+
     events = load_events_csv()
     if events.empty:
         try:
             events = db.read_events(args.db)
         except Exception:
             events = pd.DataFrame()
+
+    spy_bars = get_daily_bars("SPY", start, as_of)
+    spy_bars = spy_bars[spy_bars["date"] <= as_of] if not spy_bars.empty else spy_bars
 
     # When using Alpaca paper, seed cash from the paper account (read-only sync).
     if args.broker == "alpaca":
@@ -154,23 +159,76 @@ def main() -> None:
         last = bars.iloc[-1]
         price = float(last["close"])
         prices[ticker] = price
+
+        # Phase 4 Step 1: score the day that just closed into news_sentiment (idempotent).
+        sentiment: float | None = None
+        headline_count = 0
+        top_headline = None
+        try:
+            from news_sentiment import score_day
+
+            if not db.has_news_sentiment(as_of, ticker, args.db):
+                scored = score_day(ticker, as_of)
+                if scored.ok and scored.days:
+                    row_s = scored.days[0]
+                    db.insert_news_sentiment(
+                        row_s.date,
+                        ticker,
+                        row_s.sentiment,
+                        row_s.headline_count,
+                        row_s.summary,
+                        row_s.source,
+                        args.db,
+                    )
+            ns = db.read_news_sentiment(args.db)
+            match = ns[(ns["date"] == as_of) & (ns["ticker"] == ticker)]
+            if not match.empty:
+                sentiment = float(match.iloc[0]["sentiment"])
+                headline_count = int(match.iloc[0]["headline_count"] or 0)
+                summary = str(match.iloc[0]["summary"] or "")
+                top_headline = None if summary == "No news." else summary
+        except Exception:
+            headlines = get_headlines(ticker, as_of)
+            top_headline = headlines[0]["headline"] if headlines else None
+
         indexed = bars.set_index("date")
         indexed.index = indexed.index.astype(str)
+        # Always compute v2 display features (sentiment/headlines/regime/rs21)
+        # for the Signals page; inference uses only the active model's columns.
+        sent_s = pd.Series({as_of: sentiment if sentiment is not None else 0.0})
+        hc_s = pd.Series({as_of: float(headline_count)})
+        ns_all = db.read_news_sentiment(args.db)
+        sub = ns_all[ns_all["ticker"] == ticker] if not ns_all.empty else ns_all
+        if not sub.empty:
+            sent_s = sub.set_index("date")["sentiment"]
+            hc_s = sub.set_index("date")["headline_count"]
+            sent_s.index = sent_s.index.astype(str)
+            hc_s.index = hc_s.index.astype(str)
+        if not spy_bars.empty:
+            feats = build_features_v2(
+                indexed, spy_bars, sentiment=sent_s, headline_count=hc_s
+            )
+        else:
+            feats = build_features(indexed)
+
         use_v3 = model_version == "v3" or (
             model is not None
             and hasattr(model, "feature_names_in_")
             and "days_to_fomc" in list(model.feature_names_in_)
         )
+        infer_feats = feats
         if use_v3 and not events.empty:
-            feats = build_features_v3(indexed, events, ticker)
-        else:
-            feats = build_features(indexed)
+            infer_feats = build_features_v3(indexed, events, ticker)
+
         row = feats.dropna().iloc[-1] if not feats.dropna().empty else None
+        infer_row = (
+            infer_feats.dropna().iloc[-1] if not infer_feats.dropna().empty else None
+        )
         buy_p = hold_p = sell_p = 1 / 3
         raw = "hold"
-        if model is not None and row is not None:
+        if model is not None and infer_row is not None:
             cols = list(model.feature_names_in_)
-            proba = model.predict_proba([row[cols]])[0]
+            proba = model.predict_proba([infer_row[cols]])[0]
             classes = list(model.classes_)
             mapping = {c: float(p) for c, p in zip(classes, proba)}
             buy_p = mapping.get("buy", 0.0)
@@ -181,18 +239,14 @@ def main() -> None:
         traded = confidence_gate(raw, conf, settings["confidence_threshold"])
         rsi_val = float(row["rsi14"]) if row is not None else None
         dd63 = float(row["drawdown63"]) if row is not None else None
-        headlines = get_headlines(ticker, as_of)
-        top_headline = headlines[0]["headline"] if headlines else None
-        sentiment: float | None = None
-        if top_headline:
-            try:
-                from news_sentiment import score_headlines
-
-                sentiment = score_headlines(
-                    ticker, [h["headline"] for h in headlines[:3]]
-                )
-            except Exception:
-                sentiment = None
+        spy_regime_val = None
+        if row is not None and "spy_regime" in row.index:
+            spy_regime_val = int(row["spy_regime"])
+        # Prefer feature-row sentiment/count (0 on no-news) over unset scorer vars
+        if row is not None and "sentiment" in row.index:
+            sentiment = float(row["sentiment"])
+        if row is not None and "headline_count" in row.index:
+            headline_count = int(row["headline_count"])
         signal_rows.append(
             {
                 "date": as_of,
@@ -206,6 +260,8 @@ def main() -> None:
                 "drawdown63": dd63,
                 "sentiment": sentiment,
                 "headline": top_headline,
+                "headline_count": headline_count,
+                "spy_regime": spy_regime_val,
             }
         )
 
@@ -308,7 +364,8 @@ def main() -> None:
         for row in signal_rows:
             conn.execute(
                 "INSERT OR REPLACE INTO signals(date, ticker, signal, buy_p, hold_p, sell_p, "
-                "price, rsi14, drawdown63, sentiment, headline) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                "price, rsi14, drawdown63, sentiment, headline, headline_count, spy_regime) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     row["date"],
                     row["ticker"],
@@ -321,6 +378,8 @@ def main() -> None:
                     row["drawdown63"],
                     row["sentiment"],
                     row["headline"],
+                    row.get("headline_count"),
+                    row.get("spy_regime"),
                 ),
             )
             conn.execute(

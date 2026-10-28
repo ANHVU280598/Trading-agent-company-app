@@ -1,4 +1,4 @@
-"""Promotion gate (Phase 4 / Model v3) — no hand-tuning after peeking."""
+"""Promotion gate (Phase 4 / Model v3+) — no hand-tuning after peeking."""
 
 from __future__ import annotations
 
@@ -20,7 +20,10 @@ def evaluate_gate(
     *,
     month_drop_limit: float = 0.10,
 ) -> GateResult:
-    """Challenger trades only if ALL checks pass vs base."""
+    """Challenger trades only if ALL checks pass vs base.
+
+    Accepts either (base, challenger) or legacy (v1, v2) call sites.
+    """
     reasons: list[str] = []
     checks: dict[str, Any] = {}
 
@@ -29,7 +32,10 @@ def evaluate_gate(
     beat_acc = acc2 > acc1
     checks["accuracy_base"] = acc1
     checks["accuracy_challenger"] = acc2
+    checks["accuracy_v1"] = acc1  # back-compat aliases for Phase 4 tests
+    checks["accuracy_v2"] = acc2
     checks["accuracy_beats_base"] = beat_acc
+    checks["accuracy_beats_v1"] = beat_acc
     if not beat_acc:
         reasons.append(
             f"walk-forward accuracy {acc2:.4f} does not beat base {acc1:.4f}"
@@ -40,6 +46,8 @@ def evaluate_gate(
     buy_ok = bp2 >= bp1
     checks["buy_precision_base"] = bp1
     checks["buy_precision_challenger"] = bp2
+    checks["buy_precision_v1"] = bp1
+    checks["buy_precision_v2"] = bp2
     checks["buy_precision_ok"] = buy_ok
     if not buy_ok:
         reasons.append(f"buy precision {bp2:.4f} < base {bp1:.4f}")
@@ -49,6 +57,8 @@ def evaluate_gate(
     sell_ok = sp2 >= sp1
     checks["sell_precision_base"] = sp1
     checks["sell_precision_challenger"] = sp2
+    checks["sell_precision_v1"] = sp1
+    checks["sell_precision_v2"] = sp2
     checks["sell_precision_ok"] = sell_ok
     if not sell_ok:
         reasons.append(f"sell precision {sp2:.4f} < base {sp1:.4f}")

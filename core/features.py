@@ -20,9 +20,18 @@ FEATURE_ORDER_V1: list[str] = [
     "volz",
 ]
 
+# Phase 4 exact order
+FEATURE_ORDER_V2: list[str] = FEATURE_ORDER_V1 + [
+    "sentiment",
+    "headline_count",
+    "spy_regime",
+    "rs21",
+]
+
+# Model v3: v1 + 18 calendar features
 FEATURE_ORDER_V3: list[str] = FEATURE_ORDER_V1 + CALENDAR_FEATURE_ORDER
 
-# Back-compat alias (v1 / prototype)
+# Back-compat alias used by existing imports
 FEATURE_ORDER = FEATURE_ORDER_V1
 
 
@@ -74,6 +83,59 @@ def make_labels(prices: pd.DataFrame, buy_th: float = 0.03, sell_th: float = -0.
     return labels
 
 
+def spy_regime_series(spy_close: pd.Series) -> pd.Series:
+    """1 if SPY close > 50-day MA, else 0."""
+    ma50 = spy_close.astype(float).rolling(50).mean()
+    return (spy_close.astype(float) > ma50).astype(float)
+
+
+def build_features_v2(
+    prices: pd.DataFrame,
+    spy_prices: pd.DataFrame,
+    sentiment: Optional[pd.Series] = None,
+    headline_count: Optional[pd.Series] = None,
+) -> pd.DataFrame:
+    """v1 features + sentiment, headline_count, spy_regime, rs21.
+
+    Missing sentiment → 0.0; missing headline_count → 0 (No news.).
+    spy_regime / rs21 use only price data known at the close.
+    """
+    base = build_features(prices)
+    if base.empty:
+        return pd.DataFrame(columns=FEATURE_ORDER_V2)
+
+    out = base.copy()
+    idx = out.index.astype(str)
+
+    if sentiment is None:
+        out["sentiment"] = 0.0
+    else:
+        aligned = sentiment.reindex(idx)
+        out["sentiment"] = aligned.fillna(0.0).astype(float).values
+
+    if headline_count is None:
+        out["headline_count"] = 0.0
+    else:
+        aligned_c = headline_count.reindex(idx)
+        out["headline_count"] = aligned_c.fillna(0.0).astype(float).values
+
+    spy = spy_prices.copy()
+    if "date" in spy.columns:
+        spy = spy.set_index("date")
+    spy_close = spy["close"].astype(float)
+    spy_close.index = spy_close.index.astype(str)
+    regime = spy_regime_series(spy_close).reindex(idx)
+    out["spy_regime"] = regime.fillna(0.0).astype(float).values
+
+    ticker_ret21 = prices["close"].astype(float).pct_change(21)
+    ticker_ret21.index = ticker_ret21.index.astype(str)
+    spy_ret21 = spy_close.pct_change(21).reindex(idx)
+    rs = ticker_ret21.reindex(idx) - spy_ret21
+    out["rs21"] = rs.astype(float).values
+
+    return out[FEATURE_ORDER_V2]
+
+
 def build_features_v3(
     prices: pd.DataFrame,
     events: pd.DataFrame,
@@ -85,16 +147,13 @@ def build_features_v3(
         return pd.DataFrame(columns=FEATURE_ORDER_V3)
 
     idx = base.index
-    # Normalize index to date strings for join
     sessions = pd.Index(pd.to_datetime(idx).date)
     cal = build_calendar_features(list(sessions), events, ticker)
-    # align
     out = base.copy()
     out.index = pd.Index([str(d) for d in sessions])
     cal = cal.reindex(out.index)
     for col in CALENDAR_FEATURE_ORDER:
         out[col] = cal[col].values if col in cal.columns else 0.0
-    # Fill any gaps from missing calendar rows with safe defaults
     out["days_to_fomc"] = out["days_to_fomc"].fillna(30.0)
     out["days_to_cpi"] = out["days_to_cpi"].fillna(31.0)
     out["days_to_earnings"] = out["days_to_earnings"].fillna(63.0)

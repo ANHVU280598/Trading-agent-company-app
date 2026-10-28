@@ -58,7 +58,8 @@ def seed(
         for row in state.get("signals", []):
             conn.execute(
                 "INSERT INTO signals(date, ticker, signal, buy_p, hold_p, sell_p, price, "
-                "rsi14, drawdown63, sentiment, headline) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                "rsi14, drawdown63, sentiment, headline, headline_count, spy_regime) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     row["date"],
                     row["ticker"],
@@ -71,6 +72,8 @@ def seed(
                     row["drawdown63"],
                     row.get("sentiment"),
                     row.get("headline"),
+                    row.get("headline_count"),
+                    row.get("spy_regime"),
                 ),
             )
         for _, row in trades.iterrows():

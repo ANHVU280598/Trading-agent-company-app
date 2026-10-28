@@ -27,7 +27,13 @@ python paper_trade.py
 # Phase 3 — also submit to Alpaca PAPER (use --dry-run first)
 python paper_trade.py --broker alpaca --dry-run
 python paper_trade.py --broker alpaca
+
+# Phase 4 Step 1 — sentiment backfill (cost guard first)
+python scripts/sentiment_backfill.py --test-batch   # TSLA one month; writes cost to stdout
+# Only if projection < $25:
+python scripts/sentiment_backfill.py --full
 ```
+
 
 ## Seed demo data
 

@@ -1,4 +1,4 @@
-"""Signals — SQLite + optional Yahoo price chart (H step 4)."""
+"""Signals — SQLite + optional Yahoo price chart (H step 4 / Phase 4 + Model v3)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import streamlit as st
 
 from core.calendar_features import next_event_line
 from core.charts import price_with_markers
-from core.components import prob_bars, sentiment_html, signal_badge
+from core.components import market_regime_chip, prob_bars, sentiment_html, signal_badge
 from core.config import SIGNAL_NOTE
 from core.data import get_daily_bars
 from core.events_calendar import load_events_csv
@@ -42,6 +42,7 @@ else:
         "<th align='right'>Conf</th><th align='left'>Buy/Hold/Sell</th>"
         "<th align='right'>Price</th><th align='right'>RSI</th>"
         "<th align='right'>DD63d</th><th align='right'>Sentiment</th>"
+        "<th align='right'>Headlines</th><th align='left'>Market</th>"
         "<th align='left'>Next event</th>"
         "<th align='left'>Top headline</th></tr>"
     )
@@ -51,10 +52,20 @@ else:
         sent = row["sentiment"]
         sent_val = None if sent is None or (isinstance(sent, float) and sent != sent) else float(sent)
         headline = row["headline"] if isinstance(row["headline"], str) and row["headline"] else "—"
+        hc = row["headline_count"] if "headline_count" in row.index else None
+        try:
+            hc_disp = "—" if hc is None or (isinstance(hc, float) and hc != hc) else str(int(hc))
+        except (TypeError, ValueError):
+            hc_disp = "—"
+        regime = row["spy_regime"] if "spy_regime" in row.index else None
+        try:
+            regime_val = None if regime is None or (isinstance(regime, float) and regime != regime) else float(regime)
+        except (TypeError, ValueError):
+            regime_val = None
         nxt = next_event_line(as_of, str(row["ticker"]), events)
         body.append(
             "<tr>"
-            f"<td>{row['ticker']}<div class='tac-muted' style='font-size:12px;margin-top:2px;'>{nxt}</div></td>"
+            f"<td>{row['ticker']}</td>"
             f"<td>{signal_badge(str(row['signal']))}</td>"
             f"<td class='tac-num'>{conf_pct(conf)}</td>"
             f"<td>{prob_bars(float(row['buy_p']), float(row['hold_p']), float(row['sell_p']))}</td>"
@@ -62,6 +73,8 @@ else:
             f"<td class='tac-num'>{float(row['rsi14']):.0f}</td>"
             f"<td class='tac-num'>{pct(float(row['drawdown63']))}</td>"
             f"<td>{sentiment_html(sent_val)}</td>"
+            f"<td class='tac-num'>{hc_disp}</td>"
+            f"<td>{market_regime_chip(regime_val)}</td>"
             f"<td>{nxt}</td>"
             f"<td>{headline}</td>"
             "</tr>"
@@ -103,7 +116,6 @@ else:
         if quality:
             st.caption(f"Data quality: {quality}")
 
-    # Feature values from latest signal row + placeholders for full set
     row = signals[signals["ticker"] == selected].iloc[0]
     feats = {
         "ret1": None,
@@ -117,21 +129,54 @@ else:
         "sentiment": None
         if row["sentiment"] is None or (isinstance(row["sentiment"], float) and row["sentiment"] != row["sentiment"])
         else float(row["sentiment"]),
+        "headline_count": None,
         "spy_regime": "—",
+        "rs21": None,
     }
-    if not prices.empty and len(prices) > 63:
-        from core.features import build_features
+    if "headline_count" in row.index and row["headline_count"] == row["headline_count"]:
+        try:
+            feats["headline_count"] = int(row["headline_count"])
+        except (TypeError, ValueError):
+            pass
+    if "spy_regime" in row.index and row["spy_regime"] == row["spy_regime"]:
+        try:
+            feats["spy_regime"] = "up" if int(row["spy_regime"]) == 1 else "down"
+        except (TypeError, ValueError):
+            pass
 
-        built = build_features(prices.set_index("date")).dropna()
-        if not built.empty:
-            last = built.iloc[-1]
-            for k in ["ret1", "ret5", "ret21", "vol21", "rsi14", "dist_ma50", "drawdown63", "volz"]:
-                feats[k] = float(last[k])
+    if not prices.empty and len(prices) > 63:
+        from core.data import get_daily_bars as _bars
+        from core.features import build_features_v2
+
+        try:
+            spy = _bars("SPY", start, end)
+        except Exception:
+            spy = pd.DataFrame()
+        if not spy.empty:
+            ns = db.read_news_sentiment()
+            sub = ns[ns["ticker"] == selected] if not ns.empty else ns
+            sent = hc = None
+            if not sub.empty:
+                sent = sub.set_index("date")["sentiment"]
+                hc = sub.set_index("date")["headline_count"]
+                sent.index = sent.index.astype(str)
+                hc.index = hc.index.astype(str)
+            indexed = prices.set_index("date")
+            indexed.index = indexed.index.astype(str)
+            built = build_features_v2(indexed, spy, sentiment=sent, headline_count=hc).dropna()
+            if not built.empty:
+                last = built.iloc[-1]
+                for k in [
+                    "ret1", "ret5", "ret21", "vol21", "rsi14", "dist_ma50",
+                    "drawdown63", "volz", "sentiment", "headline_count", "rs21",
+                ]:
+                    feats[k] = float(last[k])
+                feats["spy_regime"] = "up" if int(last["spy_regime"]) == 1 else "down"
 
     def _fmt(name: str, value: object) -> str:
         if value is None:
             return "—"
-        if name in {"ret1", "ret5", "ret21", "dist_ma50", "drawdown63", "vol21"}:
+        if name in {"ret1", "ret5", "ret21", "dist_ma50", "drawdown63", "vol21", "rs21"}:
             return pct(float(value))
         if name == "rsi14":
             return f"{float(value):.0f}"
@@ -139,6 +184,8 @@ else:
             return f"{float(value):.2f}"
         if name == "sentiment":
             return f"{float(value):.2f}"
+        if name == "headline_count":
+            return f"{int(float(value))}"
         return str(value)
 
     left, right = st.columns(2)

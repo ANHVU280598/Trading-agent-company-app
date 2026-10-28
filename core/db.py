@@ -21,6 +21,8 @@ SIGNAL_COLUMNS = [
     "drawdown63",
     "sentiment",
     "headline",
+    "headline_count",
+    "spy_regime",
 ]
 TRADE_COLUMNS = [
     "id",
@@ -76,6 +78,8 @@ def init_db(db_path: Path = DB_PATH) -> None:
         drawdown63 REAL,
         sentiment REAL,
         headline TEXT,
+        headline_count INTEGER,
+        spy_regime INTEGER,
         PRIMARY KEY (date, ticker)
     );
     CREATE TABLE IF NOT EXISTS trades (
@@ -127,6 +131,15 @@ def init_db(db_path: Path = DB_PATH) -> None:
         spy_ret_20d REAL,
         PRIMARY KEY (date, ticker)
     );
+    CREATE TABLE IF NOT EXISTS news_sentiment (
+        date TEXT NOT NULL,
+        ticker TEXT NOT NULL,
+        sentiment REAL,
+        headline_count INTEGER,
+        summary TEXT,
+        source TEXT,
+        PRIMARY KEY (date, ticker)
+    );
     CREATE TABLE IF NOT EXISTS events (
         date TEXT NOT NULL,
         type TEXT NOT NULL,
@@ -137,6 +150,15 @@ def init_db(db_path: Path = DB_PATH) -> None:
     """
     with connect(db_path) as conn:
         conn.executescript(schema)
+        # Phase 4 Step 5: additive columns on existing DBs
+        cols = {
+            str(r[1])
+            for r in conn.execute("PRAGMA table_info(signals)").fetchall()
+        }
+        if "headline_count" not in cols:
+            conn.execute("ALTER TABLE signals ADD COLUMN headline_count INTEGER")
+        if "spy_regime" not in cols:
+            conn.execute("ALTER TABLE signals ADD COLUMN spy_regime INTEGER")
         conn.commit()
 
 
@@ -260,6 +282,64 @@ def replace_table(table: str, frame: pd.DataFrame, db_path: Path = DB_PATH) -> N
         if not frame.empty:
             frame.to_sql(table, conn, if_exists="append", index=False)
         conn.commit()
+
+
+NEWS_SENTIMENT_COLUMNS = [
+    "date",
+    "ticker",
+    "sentiment",
+    "headline_count",
+    "summary",
+    "source",
+]
+
+
+def read_news_sentiment(db_path: Path = DB_PATH) -> pd.DataFrame:
+    init_db(db_path)
+    try:
+        with connect(db_path) as conn:
+            df = pd.read_sql_query(
+                "SELECT * FROM news_sentiment ORDER BY date, ticker", conn
+            )
+    except sqlite3.OperationalError:
+        return _empty(NEWS_SENTIMENT_COLUMNS)
+    if df.empty:
+        return _empty(NEWS_SENTIMENT_COLUMNS)
+    return df
+
+
+def has_news_sentiment(date: str, ticker: str, db_path: Path = DB_PATH) -> bool:
+    init_db(db_path)
+    with connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT 1 FROM news_sentiment WHERE date=? AND ticker=? LIMIT 1",
+            (date, ticker.upper()),
+        ).fetchone()
+    return row is not None
+
+
+def insert_news_sentiment(
+    date: str,
+    ticker: str,
+    sentiment: float,
+    headline_count: int,
+    summary: str,
+    source: str,
+    db_path: Path = DB_PATH,
+) -> bool:
+    """Insert one row. Returns False if already present (never re-score)."""
+    init_db(db_path)
+    with connect(db_path) as conn:
+        try:
+            conn.execute(
+                "INSERT INTO news_sentiment(date, ticker, sentiment, headline_count, summary, source) "
+                "VALUES (?,?,?,?,?,?)",
+                (date, ticker.upper(), sentiment, headline_count, summary, source),
+            )
+            conn.commit()
+            return True
+        except sqlite3.IntegrityError:
+            return False
 
 
 def read_events(db_path: Path = DB_PATH) -> pd.DataFrame:
