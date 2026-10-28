@@ -1,9 +1,11 @@
 .env
 data/app.db
+data/sentiment_backfill_*.json
 paper_state.json
 paper_trades.csv
 paper_report.md
 model.joblib
+models/*.joblib
 __pycache__/
 .venv/
 venv/

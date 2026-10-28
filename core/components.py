@@ -72,6 +72,18 @@ def prob_bars(buy_p: float, hold_p: float, sell_p: float) -> str:
     )
 
 
+def market_regime_chip(spy_regime: Optional[float | int]) -> str:
+    """Phase 4 Step 5: Market up/down from spy_regime (1 / 0)."""
+    if spy_regime is None or (isinstance(spy_regime, float) and spy_regime != spy_regime):
+        return '<span class="tac-muted">Market: —</span>'
+    up = int(spy_regime) == 1
+    color = "#16C784" if up else "#EA3943"
+    label = "up" if up else "down"
+    return (
+        f'<span style="color:{color};font-weight:600;">Market: {label}</span>'
+    )
+
+
 def sentiment_html(value: Optional[float]) -> str:
     if value is None:
         return "—"
