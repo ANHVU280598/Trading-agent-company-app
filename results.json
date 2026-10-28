@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-27",
+  "train_rows": 4200,
+  "accuracy": 0.566,
+  "baseline": 0.562,
+  "verdict": "Kept",
+  "notes": "8 features, hindsight labels",
+  "feature_importance": {
+    "ret1": 0.09,
+    "ret5": 0.14,
+    "ret21": 0.11,
+    "vol21": 0.08,
+    "rsi14": 0.16,
+    "dist_ma50": 0.13,
+    "drawdown63": 0.18,
+    "volz": 0.11
+  },
+  "confusion_matrix": {
+    "labels": ["sell", "hold", "buy"],
+    "matrix": [[40, 22, 8], [30, 210, 25], [12, 28, 55]]
+  },
+  "walk_forward": [
+    {"month": "2026-07", "accuracy": 0.549},
+    {"month": "2026-08", "accuracy": 0.558},
+    {"month": "2026-09", "accuracy": 0.551},
+    {"month": "2026-10", "accuracy": 0.566}
+  ],
+  "cost_assumption": "Local paper log: no fees/slippage in v1. Backtests report costs separately."
+}

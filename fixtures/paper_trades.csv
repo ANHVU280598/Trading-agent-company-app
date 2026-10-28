@@ -1,0 +1,7 @@
+id,date,ticker,action,shares,price,confidence,status,realized_pnl
+1,2026-09-12,AAPL,buy,42.125,218.4,0.61,Open,
+2,2026-09-18,NVDA,buy,15.0,118.0,0.57,Closed,420.5
+3,2026-09-25,TSLA,buy,20.0,260.0,0.56,Closed,-312.0
+4,2026-10-03,MSFT,buy,18.5,410.0,0.59,Open,
+5,2026-10-10,NVDA,sell,3.0,135.0,0.6,Closed,51.0
+6,2026-10-20,TSLA,sell,20.0,244.4,0.58,Closed,-312.0
