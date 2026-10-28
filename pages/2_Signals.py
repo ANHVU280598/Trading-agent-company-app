@@ -1,4 +1,4 @@
-"""Signals — SQLite + optional Yahoo price chart (H step 4 / Phase 4 Step 5)."""
+"""Signals — SQLite + optional Yahoo price chart (H step 4 / Phase 4 + Model v3)."""
 
 from __future__ import annotations
 
@@ -7,10 +7,12 @@ from datetime import datetime, timedelta
 import pandas as pd
 import streamlit as st
 
+from core.calendar_features import next_event_line
 from core.charts import price_with_markers
 from core.components import market_regime_chip, prob_bars, sentiment_html, signal_badge
 from core.config import SIGNAL_NOTE
 from core.data import get_daily_bars
+from core.events_calendar import load_events_csv
 from core.formatters import conf_pct, money, pct
 from core.repository import latest_signals, load_settings
 from core.ui import empty_panel, error_banner, page_heading
@@ -20,6 +22,7 @@ page_heading("Signals")
 
 with st.spinner("Loading latest data…"):
     signals = latest_signals()
+    events = load_events_csv()
 
 if signals.empty:
     empty_panel("No signals yet. Run paper_trade.py once, then refresh.")
@@ -40,6 +43,7 @@ else:
         "<th align='right'>Price</th><th align='right'>RSI</th>"
         "<th align='right'>DD63d</th><th align='right'>Sentiment</th>"
         "<th align='right'>Headlines</th><th align='left'>Market</th>"
+        "<th align='left'>Next event</th>"
         "<th align='left'>Top headline</th></tr>"
     )
     body = []
@@ -58,6 +62,7 @@ else:
             regime_val = None if regime is None or (isinstance(regime, float) and regime != regime) else float(regime)
         except (TypeError, ValueError):
             regime_val = None
+        nxt = next_event_line(as_of, str(row["ticker"]), events)
         body.append(
             "<tr>"
             f"<td>{row['ticker']}</td>"
@@ -70,6 +75,7 @@ else:
             f"<td>{sentiment_html(sent_val)}</td>"
             f"<td class='tac-num'>{hc_disp}</td>"
             f"<td>{market_regime_chip(regime_val)}</td>"
+            f"<td>{nxt}</td>"
             f"<td>{headline}</td>"
             "</tr>"
         )

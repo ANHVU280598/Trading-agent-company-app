@@ -18,7 +18,8 @@ from dotenv import load_dotenv
 from core.agent import buys_frozen, confidence_gate, position_buy_shares
 from core.config import DB_PATH, ROOT, STARTING_PAPER_CASH
 from core.data import get_daily_bars, get_headlines
-from core.features import build_features, build_features_v2
+from core.events_calendar import load_events_csv
+from core.features import build_features, build_features_v2, build_features_v3
 from core.model_store import load_active_model
 from core.repository import load_settings
 from core import db
@@ -112,7 +113,7 @@ def main() -> None:
     new_trades: list[dict] = []
     broker_notes: list[str] = []
 
-    # Phase 4: load gated artifact (v2 if Kept, else v1). Legacy model.joblib fallback.
+    # Gated artifact (v2/v3 if Kept, else v1). Legacy model.joblib fallback.
     model = None
     model_version = "none"
     model_meta: dict = {}
@@ -126,6 +127,13 @@ def main() -> None:
     except Exception:
         model = None
     broker_notes.append(f"model={model_version}")
+
+    events = load_events_csv()
+    if events.empty:
+        try:
+            events = db.read_events(args.db)
+        except Exception:
+            events = pd.DataFrame()
 
     spy_bars = get_daily_bars("SPY", start, as_of)
     spy_bars = spy_bars[spy_bars["date"] <= as_of] if not spy_bars.empty else spy_bars
@@ -203,12 +211,24 @@ def main() -> None:
         else:
             feats = build_features(indexed)
 
+        use_v3 = model_version == "v3" or (
+            model is not None
+            and hasattr(model, "feature_names_in_")
+            and "days_to_fomc" in list(model.feature_names_in_)
+        )
+        infer_feats = feats
+        if use_v3 and not events.empty:
+            infer_feats = build_features_v3(indexed, events, ticker)
+
         row = feats.dropna().iloc[-1] if not feats.dropna().empty else None
+        infer_row = (
+            infer_feats.dropna().iloc[-1] if not infer_feats.dropna().empty else None
+        )
         buy_p = hold_p = sell_p = 1 / 3
         raw = "hold"
-        if model is not None and row is not None:
+        if model is not None and infer_row is not None:
             cols = list(model.feature_names_in_)
-            proba = model.predict_proba([row[cols]])[0]
+            proba = model.predict_proba([infer_row[cols]])[0]
             classes = list(model.classes_)
             mapping = {c: float(p) for c, p in zip(classes, proba)}
             buy_p = mapping.get("buy", 0.0)

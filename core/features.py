@@ -6,6 +6,8 @@ from typing import Optional
 
 import pandas as pd
 
+from core.calendar_features import CALENDAR_FEATURE_ORDER, build_calendar_features
+
 
 FEATURE_ORDER_V1: list[str] = [
     "ret1",
@@ -25,6 +27,9 @@ FEATURE_ORDER_V2: list[str] = FEATURE_ORDER_V1 + [
     "spy_regime",
     "rs21",
 ]
+
+# Model v3: v1 + 18 calendar features
+FEATURE_ORDER_V3: list[str] = FEATURE_ORDER_V1 + CALENDAR_FEATURE_ORDER
 
 # Back-compat alias used by existing imports
 FEATURE_ORDER = FEATURE_ORDER_V1
@@ -129,3 +134,31 @@ def build_features_v2(
     out["rs21"] = rs.astype(float).values
 
     return out[FEATURE_ORDER_V2]
+
+
+def build_features_v3(
+    prices: pd.DataFrame,
+    events: pd.DataFrame,
+    ticker: str,
+) -> pd.DataFrame:
+    """v1 price features + 18 calendar features (Model v3)."""
+    base = build_features(prices)
+    if base.empty:
+        return pd.DataFrame(columns=FEATURE_ORDER_V3)
+
+    idx = base.index
+    sessions = pd.Index(pd.to_datetime(idx).date)
+    cal = build_calendar_features(list(sessions), events, ticker)
+    out = base.copy()
+    out.index = pd.Index([str(d) for d in sessions])
+    cal = cal.reindex(out.index)
+    for col in CALENDAR_FEATURE_ORDER:
+        out[col] = cal[col].values if col in cal.columns else 0.0
+    out["days_to_fomc"] = out["days_to_fomc"].fillna(30.0)
+    out["days_to_cpi"] = out["days_to_cpi"].fillna(31.0)
+    out["days_to_earnings"] = out["days_to_earnings"].fillna(63.0)
+    for col in CALENDAR_FEATURE_ORDER:
+        if col.startswith("days_to_"):
+            continue
+        out[col] = out[col].fillna(0.0)
+    return out[FEATURE_ORDER_V3]

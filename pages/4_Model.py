@@ -1,6 +1,8 @@
-"""Model — results + Phase 4 v1 vs v2 gate (H step 5 / Phase 4 Step 5)."""
+"""Model — results + Phase 4 v1 vs v2 + Model v3 v1 vs v3 gates."""
 
 from __future__ import annotations
+
+import json
 
 import pandas as pd
 import streamlit as st
@@ -9,7 +11,13 @@ from core import db
 from core.charts import feature_importance_bars, walk_forward_bars
 from core.components import kpi_card
 from core.config import MODEL_HONESTY
-from core.repository import load_active_model_meta, load_results, load_v1_v2_report
+from core.model_store import V1_META, V2_META, V3_META
+from core.repository import (
+    load_active_model_meta,
+    load_results,
+    load_v1_v2_report,
+    load_v1_v3_report,
+)
 from core.ui import page_heading
 
 page_heading("Model")
@@ -19,31 +27,34 @@ st.markdown(f'<div class="tac-honesty">{MODEL_HONESTY}</div>', unsafe_allow_html
 with st.spinner("Loading latest data…"):
     runs = db.read_model_runs()
     results = load_results()
-    compare = load_v1_v2_report()
+    compare_v2 = load_v1_v2_report()
+    compare_v3 = load_v1_v3_report()
     active_meta = load_active_model_meta()
     trades = db.read_trades()
     grades = db.read_signal_grades()
 
-# Prefer Phase 4 comparison metrics when present
 active_version = str(active_meta.get("version") or "v1")
 display_acc = None
 display_base = None
 retrain_date = "—"
-if compare:
+
+# Prefer active model's own report side when present (v1 from either gate)
+for compare in (compare_v2, compare_v3):
+    if not compare:
+        continue
     side = compare.get(active_version) or compare.get("v1") or {}
-    if side:
+    if side and display_acc is None:
         display_acc = float(side.get("accuracy") or 0)
         display_base = float(side.get("baseline") or 0)
-    from core.model_store import V1_META, V2_META
-    import json
 
-    for meta_path in (V2_META, V1_META):
-        if meta_path.exists():
-            retrain_date = str(
-                json.loads(meta_path.read_text(encoding="utf-8")).get("trained_date")
-                or retrain_date
-            )
-            break
+for meta_path in (V3_META, V2_META, V1_META):
+    if meta_path.exists():
+        retrain_date = str(
+            json.loads(meta_path.read_text(encoding="utf-8")).get("trained_date")
+            or retrain_date
+        )
+        break
+
 if display_acc is None:
     if not runs.empty:
         kept = runs[runs["verdict"] == "Kept"]
@@ -62,7 +73,6 @@ if display_acc is None:
         with col:
             kpi_card("—", "—")
 else:
-
     closed = trades[trades["status"] == "Closed"] if not trades.empty else trades
     wins = closed[closed["realized_pnl"].fillna(0) > 0] if not closed.empty else closed
     wr = (len(wins) / len(closed) * 100) if len(closed) else None
@@ -72,7 +82,7 @@ else:
         kpi_card(
             "Test accuracy",
             f"{display_acc * 100:.1f}%",
-            f"vs {display_base * 100:.1f}% baseline · active {active_version}",
+            f"vs {(display_base or 0) * 100:.1f}% baseline · active {active_version}",
         )
     with c2:
         kpi_card("Paper win rate", "—" if wr is None else f"{wr:.1f}%")
@@ -81,14 +91,16 @@ else:
     with c4:
         kpi_card("Last retrained", retrain_date)
 
-    st.caption(results.get("cost_assumption", "") or (compare.get("v1") or {}).get("cost_assumption", ""))
+    st.caption(
+        results.get("cost_assumption", "")
+        or (compare_v2.get("v1") or {}).get("cost_assumption", "")
+        or (compare_v3.get("v1") or {}).get("cost_assumption", "")
+    )
 
-    # Phase 4: v1 vs v2 comparison block
-    if compare:
-        st.markdown(
-            '<div class="tac-section">v1 vs v2 (Phase 4 gate)</div>',
-            unsafe_allow_html=True,
-        )
+    def _gate_block(title: str, compare: dict, challenger_key: str) -> None:
+        if not compare:
+            return
+        st.markdown(f'<div class="tac-section">{title}</div>', unsafe_allow_html=True)
         gate = compare.get("gate") or {}
         verdict = gate.get("verdict", "—")
         color = "#16C784" if verdict == "Kept" else "#EA3943"
@@ -100,22 +112,24 @@ else:
             unsafe_allow_html=True,
         )
         v1 = compare.get("v1") or {}
-        v2 = compare.get("v2") or {}
+        ch = compare.get(challenger_key) or {}
         rows = [
-            ("Walk-forward accuracy", v1.get("accuracy"), v2.get("accuracy"), "pct"),
-            ("Always-hold baseline", v1.get("baseline"), v2.get("baseline"), "pct"),
-            ("Buy precision", v1.get("buy_precision"), v2.get("buy_precision"), "pct"),
-            ("Sell precision", v1.get("sell_precision"), v2.get("sell_precision"), "pct"),
-            ("Train rows", v1.get("train_rows"), v2.get("train_rows"), "int"),
+            ("Walk-forward accuracy", v1.get("accuracy"), ch.get("accuracy"), "pct"),
+            ("Always-hold baseline", v1.get("baseline"), ch.get("baseline"), "pct"),
+            ("Buy precision", v1.get("buy_precision"), ch.get("buy_precision"), "pct"),
+            ("Sell precision", v1.get("sell_precision"), ch.get("sell_precision"), "pct"),
+            ("Train rows", v1.get("train_rows"), ch.get("train_rows"), "int"),
         ]
         body = []
         for label, a, b, kind in rows:
+
             def _cell(x: object, k: str = kind) -> str:
                 if x is None:
                     return "—"
                 if k == "int":
                     return str(int(x))
                 return f"{float(x) * 100:.1f}%"
+
             body.append(
                 "<tr>"
                 f"<td>{label}</td>"
@@ -128,7 +142,8 @@ else:
             <div class="tac-panel">
             <table style="width:100%;border-collapse:collapse;font-size:14px;">
               <thead><tr class="tac-muted">
-                <th align="left">Metric</th><th align="right">v1</th><th align="right">v2</th>
+                <th align="left">Metric</th><th align="right">v1 (base)</th>
+                <th align="right">{challenger_key}</th>
               </tr></thead>
               <tbody>{''.join(body)}</tbody>
             </table>
@@ -136,18 +151,28 @@ else:
             """,
             unsafe_allow_html=True,
         )
-        rank_words = v2.get("sentiment_importance_rank_words")
-        if rank_words:
-            st.caption(str(rank_words))
+        if challenger_key == "v2":
+            words = ch.get("sentiment_importance_rank_words")
+        else:
+            words = ch.get("calendar_importance_words")
+        if words:
+            st.caption(str(words))
+
+    _gate_block("v1 vs v2 (Phase 4 gate)", compare_v2, "v2")
+    _gate_block("v1 vs v3 (Model v3 gate)", compare_v3, "v3")
 
     st.markdown(
         '<div class="tac-section">Walk-forward accuracy by month</div>',
         unsafe_allow_html=True,
     )
     wf_source = None
-    if compare:
-        side = compare.get(active_version) or compare.get("v2") or compare.get("v1") or {}
-        wf_source = side.get("walk_forward")
+    for compare in (compare_v2, compare_v3):
+        if not compare:
+            continue
+        side = compare.get(active_version) or compare.get("v1") or {}
+        if side.get("walk_forward"):
+            wf_source = side.get("walk_forward")
+            break
     wf = pd.DataFrame(wf_source or results.get("walk_forward") or [])
     if wf.empty and not runs.empty:
         tmp = runs.copy()
@@ -180,8 +205,10 @@ else:
     with right:
         st.markdown('<div class="tac-section">Feature importance</div>', unsafe_allow_html=True)
         fi = {}
-        if compare and (compare.get("v2") or {}).get("feature_importance"):
-            fi = compare["v2"]["feature_importance"]
+        if compare_v3 and (compare_v3.get("v3") or {}).get("feature_importance"):
+            fi = compare_v3["v3"]["feature_importance"]
+        elif compare_v2 and (compare_v2.get("v2") or {}).get("feature_importance"):
+            fi = compare_v2["v2"]["feature_importance"]
         else:
             fi = results.get("feature_importance") or {}
         if not fi:
@@ -246,6 +273,7 @@ if n < 30:
         unsafe_allow_html=True,
     )
 else:
+
     def _wins(frame: pd.DataFrame, signal: str, horizon: str) -> float | None:
         sub = frame[frame["signal"] == signal].dropna(subset=[horizon, f"spy_{horizon}"])
         if sub.empty:

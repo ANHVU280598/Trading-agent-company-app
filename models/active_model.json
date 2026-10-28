@@ -1,4 +1,4 @@
 {
   "version": "v1",
-  "reason": "walk-forward accuracy 0.5547 does not beat v1 0.5583; buy precision 0.3775 < v1 0.3881; sell precision 0.3053 < v1 0.3195"
+  "reason": "v2 Rejected (Phase 4); v3 Rejected (Model v3). Paper stays on v1."
 }
