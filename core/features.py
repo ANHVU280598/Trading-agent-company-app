@@ -1,11 +1,15 @@
-"""Feature engineering. Formulas must match train.py / paper_trade.py (later)."""
+"""Feature engineering. Formulas must match train.py / paper_trade.py."""
 
 from __future__ import annotations
 
+from typing import Optional
+
 import pandas as pd
 
+from core.calendar_features import CALENDAR_FEATURE_ORDER, build_calendar_features
 
-FEATURE_ORDER: list[str] = [
+
+FEATURE_ORDER_V1: list[str] = [
     "ret1",
     "ret5",
     "ret21",
@@ -15,6 +19,11 @@ FEATURE_ORDER: list[str] = [
     "drawdown63",
     "volz",
 ]
+
+FEATURE_ORDER_V3: list[str] = FEATURE_ORDER_V1 + CALENDAR_FEATURE_ORDER
+
+# Back-compat alias (v1 / prototype)
+FEATURE_ORDER = FEATURE_ORDER_V1
 
 
 def rsi(series: pd.Series, period: int = 14) -> pd.Series:
@@ -29,12 +38,8 @@ def rsi(series: pd.Series, period: int = 14) -> pd.Series:
 
 
 def build_features(prices: pd.DataFrame) -> pd.DataFrame:
-    """Build the 8 prototype features from a close/volume frame.
-
-    Skeleton: returns an empty frame with the right columns when input is empty.
-    Full parity with train.py is enforced in H step tests.
-    """
-    cols = FEATURE_ORDER.copy()
+    """Build the 8 prototype (v1) features from a close/volume frame."""
+    cols = FEATURE_ORDER_V1.copy()
     if prices is None or prices.empty:
         return pd.DataFrame(columns=cols)
     out = pd.DataFrame(index=prices.index)
@@ -57,17 +62,44 @@ def build_features(prices: pd.DataFrame) -> pd.DataFrame:
 
 
 def make_labels(prices: pd.DataFrame, buy_th: float = 0.03, sell_th: float = -0.03) -> pd.Series:
-    """Hindsight label rule: forward 5-day return vs ±0.03 thresholds.
-
-    Exactly +3.0% is hold (not buy). Exactly -3.0% is hold (not sell).
-    """
+    """Hindsight label rule: forward 5-day return vs ±0.03 thresholds."""
     if prices is None or prices.empty:
         return pd.Series(dtype="object")
     close = prices["close"].astype(float)
-    # Round so exact ±3.0% boundaries are hold (float 103/100-1 is not 0.03).
     forward = (close.shift(-5) / close - 1.0).round(10)
     labels = pd.Series("hold", index=prices.index, dtype="object")
     labels = labels.mask(forward > buy_th, "buy")
     labels = labels.mask(forward < sell_th, "sell")
     labels.iloc[-5:] = pd.NA
     return labels
+
+
+def build_features_v3(
+    prices: pd.DataFrame,
+    events: pd.DataFrame,
+    ticker: str,
+) -> pd.DataFrame:
+    """v1 price features + 18 calendar features (Model v3)."""
+    base = build_features(prices)
+    if base.empty:
+        return pd.DataFrame(columns=FEATURE_ORDER_V3)
+
+    idx = base.index
+    # Normalize index to date strings for join
+    sessions = pd.Index(pd.to_datetime(idx).date)
+    cal = build_calendar_features(list(sessions), events, ticker)
+    # align
+    out = base.copy()
+    out.index = pd.Index([str(d) for d in sessions])
+    cal = cal.reindex(out.index)
+    for col in CALENDAR_FEATURE_ORDER:
+        out[col] = cal[col].values if col in cal.columns else 0.0
+    # Fill any gaps from missing calendar rows with safe defaults
+    out["days_to_fomc"] = out["days_to_fomc"].fillna(30.0)
+    out["days_to_cpi"] = out["days_to_cpi"].fillna(31.0)
+    out["days_to_earnings"] = out["days_to_earnings"].fillna(63.0)
+    for col in CALENDAR_FEATURE_ORDER:
+        if col.startswith("days_to_"):
+            continue
+        out[col] = out[col].fillna(0.0)
+    return out[FEATURE_ORDER_V3]

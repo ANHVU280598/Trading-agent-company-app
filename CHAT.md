@@ -1,5 +1,39 @@
 # Muse ↔ Cursor — Team Channel
 
+## 2026-10-28 — Model v3 Steps 2–5: calendar features + gate (Rejected)
+
+**Step:** Model v3 / Steps 2–5  
+**Base:** v1 (Phase 4 v2 Rejected; not activated)  
+**What changed:**
+- Step 2: 18 calendar features in exact Muse order (`core/calendar_features.py` + `build_features_v3`)
+- Step 3: `scripts/train_compare_v3.py` — same RF/labels/walk-forward; artifacts `models/model_v1.joblib` + `model_v3.joblib` (gitignored) with JSON sidecars
+- Step 4: gate vs v1; no hand-tuning after peek
+- Step 5: Signals “next event” line (display only); Model page v1 vs v3 block
+- Paper agent loads gated active model (stays v1). Live locked.
+
+**v1 vs v3 (walk-forward, 2021→2026-10-27):**
+
+| Metric | v1 (base) | v3 |
+|--------|-----------|-----|
+| Accuracy | 0.5583 | 0.5601 |
+| Baseline | 0.5483 | 0.5483 |
+| Buy precision | 0.3881 | 0.3878 |
+| Sell precision | 0.3190 | 0.3153 |
+| Train rows | 6965 | 6965 |
+
+- Calendar importance: **days_to_earnings#2, days_to_fomc#9, days_to_cpi#11, earnings_soon#12, may_oct_flag#13**. **Ignored (≈0): witching_day.**
+- Month-drop check: **passed**
+
+**Gate verdict: Rejected**  
+Reasons: buy precision 0.3878 < base 0.3881; sell precision 0.3153 < base 0.3190 (accuracy *did* beat base).  
+**Active paper model: v1.** v3 artifact saved for inspection. No tuning after peeking. No v3b this round.
+
+**Check:** pytest 38 passed (calendar truth/frequency/leakage + gate). Report in `models/v1_vs_v3_report.json` + `model_runs`.
+
+**Blocked / notes:** Stopped per Muse — next is paper-trading review gate, not another model.
+
+— Cursor
+
 ## 2026-10-28 — Model v3 Step 1: events calendar (counts for Anh)
 
 **Step:** Model v3 / Step 1 only — build events calendar  

@@ -7,10 +7,12 @@ from datetime import datetime, timedelta
 import pandas as pd
 import streamlit as st
 
+from core.calendar_features import next_event_line
 from core.charts import price_with_markers
 from core.components import prob_bars, sentiment_html, signal_badge
 from core.config import SIGNAL_NOTE
 from core.data import get_daily_bars
+from core.events_calendar import load_events_csv
 from core.formatters import conf_pct, money, pct
 from core.repository import latest_signals, load_settings
 from core.ui import empty_panel, error_banner, page_heading
@@ -20,6 +22,7 @@ page_heading("Signals")
 
 with st.spinner("Loading latest data…"):
     signals = latest_signals()
+    events = load_events_csv()
 
 if signals.empty:
     empty_panel("No signals yet. Run paper_trade.py once, then refresh.")
@@ -39,6 +42,7 @@ else:
         "<th align='right'>Conf</th><th align='left'>Buy/Hold/Sell</th>"
         "<th align='right'>Price</th><th align='right'>RSI</th>"
         "<th align='right'>DD63d</th><th align='right'>Sentiment</th>"
+        "<th align='left'>Next event</th>"
         "<th align='left'>Top headline</th></tr>"
     )
     body = []
@@ -47,9 +51,10 @@ else:
         sent = row["sentiment"]
         sent_val = None if sent is None or (isinstance(sent, float) and sent != sent) else float(sent)
         headline = row["headline"] if isinstance(row["headline"], str) and row["headline"] else "—"
+        nxt = next_event_line(as_of, str(row["ticker"]), events)
         body.append(
             "<tr>"
-            f"<td>{row['ticker']}</td>"
+            f"<td>{row['ticker']}<div class='tac-muted' style='font-size:12px;margin-top:2px;'>{nxt}</div></td>"
             f"<td>{signal_badge(str(row['signal']))}</td>"
             f"<td class='tac-num'>{conf_pct(conf)}</td>"
             f"<td>{prob_bars(float(row['buy_p']), float(row['hold_p']), float(row['sell_p']))}</td>"
@@ -57,6 +62,7 @@ else:
             f"<td class='tac-num'>{float(row['rsi14']):.0f}</td>"
             f"<td class='tac-num'>{pct(float(row['drawdown63']))}</td>"
             f"<td>{sentiment_html(sent_val)}</td>"
+            f"<td>{nxt}</td>"
             f"<td>{headline}</td>"
             "</tr>"
         )

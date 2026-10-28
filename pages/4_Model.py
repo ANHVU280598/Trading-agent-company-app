@@ -1,6 +1,8 @@
-"""Model — results.json + model_runs + signal scorecard (H step 5 / addendum)."""
+"""Model — results + Model v3 v1 vs v3 gate (H step 5 / v3 Step 5)."""
 
 from __future__ import annotations
+
+import json
 
 import pandas as pd
 import streamlit as st
@@ -9,7 +11,8 @@ from core import db
 from core.charts import feature_importance_bars, walk_forward_bars
 from core.components import kpi_card
 from core.config import MODEL_HONESTY
-from core.repository import load_results
+from core.model_store import V1_META, V3_META
+from core.repository import load_active_model_meta, load_results, load_v1_v3_report
 from core.ui import page_heading
 
 page_heading("Model")
@@ -19,26 +22,47 @@ st.markdown(f'<div class="tac-honesty">{MODEL_HONESTY}</div>', unsafe_allow_html
 with st.spinner("Loading latest data…"):
     runs = db.read_model_runs()
     results = load_results()
+    compare = load_v1_v3_report()
+    active_meta = load_active_model_meta()
     trades = db.read_trades()
     grades = db.read_signal_grades()
 
-if runs.empty and not results:
+active_version = str(active_meta.get("version") or "v1")
+display_acc = None
+display_base = None
+retrain_date = "—"
+
+if compare:
+    side = compare.get(active_version) or compare.get("v1") or {}
+    if side:
+        display_acc = float(side.get("accuracy") or 0)
+        display_base = float(side.get("baseline") or 0)
+    for meta_path in (V3_META, V1_META):
+        if meta_path.exists():
+            retrain_date = str(
+                json.loads(meta_path.read_text(encoding="utf-8")).get("trained_date")
+                or retrain_date
+            )
+            break
+
+if display_acc is None:
+    if not runs.empty:
+        kept = runs[runs["verdict"] == "Kept"]
+        latest = kept.iloc[0] if not kept.empty else runs.iloc[0]
+        display_acc = float(latest["accuracy"])
+        display_base = float(latest["baseline"])
+        retrain_date = str(latest["date"])
+    elif results:
+        display_acc = float(results["accuracy"])
+        display_base = float(results["baseline"])
+        retrain_date = str(results["date"])
+
+if display_acc is None:
     c1, c2, c3, c4 = st.columns(4)
     for col in (c1, c2, c3, c4):
         with col:
             kpi_card("—", "—")
 else:
-    if not runs.empty:
-        kept = runs[runs["verdict"] == "Kept"]
-        latest = kept.iloc[0] if not kept.empty else runs.iloc[0]
-        accuracy = float(latest["accuracy"])
-        baseline = float(latest["baseline"])
-        retrain_date = str(latest["date"])
-    else:
-        accuracy = float(results["accuracy"])
-        baseline = float(results["baseline"])
-        retrain_date = str(results["date"])
-
     closed = trades[trades["status"] == "Closed"] if not trades.empty else trades
     wins = closed[closed["realized_pnl"].fillna(0) > 0] if not closed.empty else closed
     wr = (len(wins) / len(closed) * 100) if len(closed) else None
@@ -47,8 +71,8 @@ else:
     with c1:
         kpi_card(
             "Test accuracy",
-            f"{accuracy * 100:.1f}%",
-            f"vs {baseline * 100:.1f}% baseline",
+            f"{display_acc * 100:.1f}%",
+            f"vs {(display_base or 0) * 100:.1f}% baseline · active {active_version}",
         )
     with c2:
         kpi_card("Paper win rate", "—" if wr is None else f"{wr:.1f}%")
@@ -59,18 +83,79 @@ else:
 
     st.caption(results.get("cost_assumption", ""))
 
+    if compare:
+        st.markdown(
+            '<div class="tac-section">v1 vs v3 (Model v3 gate)</div>',
+            unsafe_allow_html=True,
+        )
+        gate = compare.get("gate") or {}
+        verdict = gate.get("verdict", "—")
+        color = "#16C784" if verdict == "Kept" else "#EA3943"
+        reasons = gate.get("reasons") or []
+        st.markdown(
+            f'<div class="tac-panel"><span style="color:{color};font-weight:600;">'
+            f"Gate: {verdict}</span> · active paper model: <b>{gate.get('active_model', active_version)}</b>"
+            f"<div class='tac-body' style='margin-top:8px;'>{'; '.join(reasons)}</div></div>",
+            unsafe_allow_html=True,
+        )
+        v1 = compare.get("v1") or {}
+        v3 = compare.get("v3") or {}
+        rows = [
+            ("Walk-forward accuracy", v1.get("accuracy"), v3.get("accuracy"), "pct"),
+            ("Always-hold baseline", v1.get("baseline"), v3.get("baseline"), "pct"),
+            ("Buy precision", v1.get("buy_precision"), v3.get("buy_precision"), "pct"),
+            ("Sell precision", v1.get("sell_precision"), v3.get("sell_precision"), "pct"),
+            ("Train rows", v1.get("train_rows"), v3.get("train_rows"), "int"),
+        ]
+        body = []
+        for label, a, b, kind in rows:
+            def _cell(x: object, k: str = kind) -> str:
+                if x is None:
+                    return "—"
+                if k == "int":
+                    return str(int(x))
+                return f"{float(x) * 100:.1f}%"
+            body.append(
+                "<tr>"
+                f"<td>{label}</td>"
+                f"<td class='tac-num'>{_cell(a)}</td>"
+                f"<td class='tac-num'>{_cell(b)}</td>"
+                "</tr>"
+            )
+        st.markdown(
+            f"""
+            <div class="tac-panel">
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <thead><tr class="tac-muted">
+                <th align="left">Metric</th><th align="right">v1 (base)</th><th align="right">v3</th>
+              </tr></thead>
+              <tbody>{''.join(body)}</tbody>
+            </table>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        words = v3.get("calendar_importance_words")
+        if words:
+            st.caption(str(words))
+
     st.markdown(
         '<div class="tac-section">Walk-forward accuracy by month</div>',
         unsafe_allow_html=True,
     )
-    wf = pd.DataFrame(results.get("walk_forward") or [])
+    wf_source = None
+    if compare:
+        side = compare.get(active_version) or compare.get("v3") or compare.get("v1") or {}
+        wf_source = side.get("walk_forward")
+    wf = pd.DataFrame(wf_source or results.get("walk_forward") or [])
     if wf.empty and not runs.empty:
         tmp = runs.copy()
         tmp["month"] = tmp["date"].astype(str).str.slice(0, 7)
         wf = tmp.groupby("month", as_index=False)["accuracy"].mean()
+    baseline_plot = display_base or 0.0
     if not wf.empty:
         st.plotly_chart(
-            walk_forward_bars(wf, baseline),
+            walk_forward_bars(wf, baseline_plot),
             use_container_width=True,
             config={"displayModeBar": False},
         )
@@ -93,7 +178,11 @@ else:
             )
     with right:
         st.markdown('<div class="tac-section">Feature importance</div>', unsafe_allow_html=True)
-        fi = results.get("feature_importance") or {}
+        fi = {}
+        if compare and (compare.get("v3") or {}).get("feature_importance"):
+            fi = compare["v3"]["feature_importance"]
+        else:
+            fi = results.get("feature_importance") or {}
         if not fi:
             st.markdown(
                 '<div class="tac-panel-empty">No test run saved yet.</div>',
@@ -119,6 +208,7 @@ else:
         rows = []
         for _, r in runs.iterrows():
             color = "#16C784" if r["verdict"] == "Kept" else "#848E9C"
+            notes = str(r["notes"]) if "notes" in r.index and r["notes"] == r["notes"] else ""
             rows.append(
                 "<tr>"
                 f"<td>{r['date']}</td>"
@@ -126,6 +216,7 @@ else:
                 f"<td class='tac-num'>{float(r['accuracy']) * 100:.1f}%</td>"
                 f"<td class='tac-num'>{float(r['baseline']) * 100:.1f}%</td>"
                 f"<td style='color:{color};'>{r['verdict']}</td>"
+                f"<td>{notes}</td>"
                 "</tr>"
             )
         st.markdown(
@@ -135,7 +226,7 @@ else:
               <thead><tr class="tac-muted">
                 <th align="left">Date</th><th align="right">Train rows</th>
                 <th align="right">Test accuracy</th><th align="right">Baseline</th>
-                <th align="left">Verdict</th>
+                <th align="left">Verdict</th><th align="left">Notes</th>
               </tr></thead>
               <tbody>{''.join(rows)}</tbody>
             </table>
@@ -154,7 +245,6 @@ if n < 30:
         unsafe_allow_html=True,
     )
 else:
-    # Split BUY/SELL win rates at 5d / 20d vs SPY
     def _wins(frame: pd.DataFrame, signal: str, horizon: str) -> float | None:
         sub = frame[frame["signal"] == signal].dropna(subset=[horizon, f"spy_{horizon}"])
         if sub.empty:

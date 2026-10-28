@@ -18,7 +18,9 @@ from dotenv import load_dotenv
 from core.agent import buys_frozen, confidence_gate, position_buy_shares
 from core.config import DB_PATH, ROOT, STARTING_PAPER_CASH
 from core.data import get_daily_bars, get_headlines
-from core.features import build_features
+from core.events_calendar import load_events_csv
+from core.features import build_features, build_features_v3
+from core.model_store import load_active_model
 from core.repository import load_settings
 from core import db
 
@@ -111,15 +113,25 @@ def main() -> None:
     new_trades: list[dict] = []
     broker_notes: list[str] = []
 
-    # Prefer a kept model if present; otherwise HOLD everything (honest demo).
+    # Gated artifact (v3 if Kept, else v1). Legacy model.joblib fallback.
     model = None
+    model_version = "none"
     try:
-        import joblib
+        model, _meta, model_version = load_active_model()
+        if model is None and MODEL_PATH.exists():
+            import joblib
 
-        if MODEL_PATH.exists():
             model = joblib.load(MODEL_PATH)
+            model_version = "legacy"
     except Exception:
         model = None
+    broker_notes.append(f"model={model_version}")
+    events = load_events_csv()
+    if events.empty:
+        try:
+            events = db.read_events(args.db)
+        except Exception:
+            events = pd.DataFrame()
 
     # When using Alpaca paper, seed cash from the paper account (read-only sync).
     if args.broker == "alpaca":
@@ -142,12 +154,23 @@ def main() -> None:
         last = bars.iloc[-1]
         price = float(last["close"])
         prices[ticker] = price
-        feats = build_features(bars.set_index("date"))
+        indexed = bars.set_index("date")
+        indexed.index = indexed.index.astype(str)
+        use_v3 = model_version == "v3" or (
+            model is not None
+            and hasattr(model, "feature_names_in_")
+            and "days_to_fomc" in list(model.feature_names_in_)
+        )
+        if use_v3 and not events.empty:
+            feats = build_features_v3(indexed, events, ticker)
+        else:
+            feats = build_features(indexed)
         row = feats.dropna().iloc[-1] if not feats.dropna().empty else None
         buy_p = hold_p = sell_p = 1 / 3
         raw = "hold"
         if model is not None and row is not None:
-            proba = model.predict_proba([row[list(model.feature_names_in_)]])[0]
+            cols = list(model.feature_names_in_)
+            proba = model.predict_proba([row[cols]])[0]
             classes = list(model.classes_)
             mapping = {c: float(p) for c, p in zip(classes, proba)}
             buy_p = mapping.get("buy", 0.0)

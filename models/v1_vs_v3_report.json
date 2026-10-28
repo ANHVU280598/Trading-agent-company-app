@@ -1,0 +1,792 @@
+{
+  "base": "v1",
+  "v1": {
+    "accuracy": 0.558339402767662,
+    "baseline": 0.5482884195193009,
+    "buy_precision": 0.3881118881118881,
+    "sell_precision": 0.31899641577060933,
+    "train_rows": 6965,
+    "walk_forward": [
+      {
+        "month": "2021-05",
+        "accuracy": 0.62,
+        "baseline": 0.62
+      },
+      {
+        "month": "2021-06",
+        "accuracy": 0.6727272727272727,
+        "baseline": 0.6727272727272727
+      },
+      {
+        "month": "2021-07",
+        "accuracy": 0.7428571428571429,
+        "baseline": 0.7428571428571429
+      },
+      {
+        "month": "2021-08",
+        "accuracy": 0.7181818181818181,
+        "baseline": 0.7181818181818181
+      },
+      {
+        "month": "2021-09",
+        "accuracy": 0.7238095238095238,
+        "baseline": 0.7238095238095238
+      },
+      {
+        "month": "2021-10",
+        "accuracy": 0.4857142857142857,
+        "baseline": 0.5142857142857142
+      },
+      {
+        "month": "2021-11",
+        "accuracy": 0.6190476190476191,
+        "baseline": 0.6666666666666666
+      },
+      {
+        "month": "2021-12",
+        "accuracy": 0.4727272727272727,
+        "baseline": 0.4727272727272727
+      },
+      {
+        "month": "2022-01",
+        "accuracy": 0.33,
+        "baseline": 0.47
+      },
+      {
+        "month": "2022-02",
+        "accuracy": 0.6105263157894737,
+        "baseline": 0.6
+      },
+      {
+        "month": "2022-03",
+        "accuracy": 0.3739130434782609,
+        "baseline": 0.41739130434782606
+      },
+      {
+        "month": "2022-04",
+        "accuracy": 0.49,
+        "baseline": 0.49
+      },
+      {
+        "month": "2022-05",
+        "accuracy": 0.3619047619047619,
+        "baseline": 0.4095238095238095
+      },
+      {
+        "month": "2022-06",
+        "accuracy": 0.5428571428571428,
+        "baseline": 0.41904761904761906
+      },
+      {
+        "month": "2022-07",
+        "accuracy": 0.34,
+        "baseline": 0.53
+      },
+      {
+        "month": "2022-08",
+        "accuracy": 0.3739130434782609,
+        "baseline": 0.4956521739130435
+      },
+      {
+        "month": "2022-09",
+        "accuracy": 0.3523809523809524,
+        "baseline": 0.4380952380952381
+      },
+      {
+        "month": "2022-10",
+        "accuracy": 0.3619047619047619,
+        "baseline": 0.34285714285714286
+      },
+      {
+        "month": "2022-11",
+        "accuracy": 0.3619047619047619,
+        "baseline": 0.45714285714285713
+      },
+      {
+        "month": "2022-12",
+        "accuracy": 0.5142857142857142,
+        "baseline": 0.4857142857142857
+      },
+      {
+        "month": "2023-01",
+        "accuracy": 0.37,
+        "baseline": 0.68
+      },
+      {
+        "month": "2023-02",
+        "accuracy": 0.6,
+        "baseline": 0.6
+      },
+      {
+        "month": "2023-03",
+        "accuracy": 0.5304347826086957,
+        "baseline": 0.5304347826086957
+      },
+      {
+        "month": "2023-04",
+        "accuracy": 0.6842105263157895,
+        "baseline": 0.7157894736842105
+      },
+      {
+        "month": "2023-05",
+        "accuracy": 0.6636363636363637,
+        "baseline": 0.5909090909090909
+      },
+      {
+        "month": "2023-06",
+        "accuracy": 0.6666666666666666,
+        "baseline": 0.638095238095238
+      },
+      {
+        "month": "2023-07",
+        "accuracy": 0.61,
+        "baseline": 0.63
+      },
+      {
+        "month": "2023-08",
+        "accuracy": 0.6608695652173913,
+        "baseline": 0.5565217391304348
+      },
+      {
+        "month": "2023-09",
+        "accuracy": 0.55,
+        "baseline": 0.54
+      },
+      {
+        "month": "2023-10",
+        "accuracy": 0.4909090909090909,
+        "baseline": 0.4636363636363636
+      },
+      {
+        "month": "2023-11",
+        "accuracy": 0.638095238095238,
+        "baseline": 0.638095238095238
+      },
+      {
+        "month": "2023-12",
+        "accuracy": 0.77,
+        "baseline": 0.78
+      },
+      {
+        "month": "2024-01",
+        "accuracy": 0.47619047619047616,
+        "baseline": 0.4857142857142857
+      },
+      {
+        "month": "2024-02",
+        "accuracy": 0.66,
+        "baseline": 0.62
+      },
+      {
+        "month": "2024-03",
+        "accuracy": 0.64,
+        "baseline": 0.67
+      },
+      {
+        "month": "2024-04",
+        "accuracy": 0.5818181818181818,
+        "baseline": 0.5181818181818182
+      },
+      {
+        "month": "2024-05",
+        "accuracy": 0.6272727272727273,
+        "baseline": 0.6818181818181818
+      },
+      {
+        "month": "2024-06",
+        "accuracy": 0.4631578947368421,
+        "baseline": 0.5263157894736842
+      },
+      {
+        "month": "2024-07",
+        "accuracy": 0.5363636363636364,
+        "baseline": 0.5181818181818182
+      },
+      {
+        "month": "2024-08",
+        "accuracy": 0.509090909090909,
+        "baseline": 0.4818181818181818
+      },
+      {
+        "month": "2024-09",
+        "accuracy": 0.57,
+        "baseline": 0.57
+      },
+      {
+        "month": "2024-10",
+        "accuracy": 0.6434782608695652,
+        "baseline": 0.6173913043478261
+      },
+      {
+        "month": "2024-11",
+        "accuracy": 0.68,
+        "baseline": 0.62
+      },
+      {
+        "month": "2024-12",
+        "accuracy": 0.580952380952381,
+        "baseline": 0.5428571428571428
+      },
+      {
+        "month": "2025-01",
+        "accuracy": 0.49,
+        "baseline": 0.49
+      },
+      {
+        "month": "2025-02",
+        "accuracy": 0.6105263157894737,
+        "baseline": 0.4842105263157895
+      },
+      {
+        "month": "2025-03",
+        "accuracy": 0.4380952380952381,
+        "baseline": 0.4380952380952381
+      },
+      {
+        "month": "2025-04",
+        "accuracy": 0.4380952380952381,
+        "baseline": 0.5047619047619047
+      },
+      {
+        "month": "2025-05",
+        "accuracy": 0.6190476190476191,
+        "baseline": 0.4857142857142857
+      },
+      {
+        "month": "2025-06",
+        "accuracy": 0.72,
+        "baseline": 0.69
+      },
+      {
+        "month": "2025-07",
+        "accuracy": 0.7,
+        "baseline": 0.6909090909090909
+      },
+      {
+        "month": "2025-08",
+        "accuracy": 0.6095238095238096,
+        "baseline": 0.6190476190476191
+      },
+      {
+        "month": "2025-09",
+        "accuracy": 0.6666666666666666,
+        "baseline": 0.6476190476190476
+      },
+      {
+        "month": "2025-10",
+        "accuracy": 0.5565217391304348,
+        "baseline": 0.6434782608695652
+      },
+      {
+        "month": "2025-11",
+        "accuracy": 0.5789473684210527,
+        "baseline": 0.5789473684210527
+      },
+      {
+        "month": "2025-12",
+        "accuracy": 0.6454545454545455,
+        "baseline": 0.6727272727272727
+      },
+      {
+        "month": "2026-01",
+        "accuracy": 0.54,
+        "baseline": 0.55
+      },
+      {
+        "month": "2026-02",
+        "accuracy": 0.47368421052631576,
+        "baseline": 0.6421052631578947
+      },
+      {
+        "month": "2026-03",
+        "accuracy": 0.6,
+        "baseline": 0.6727272727272727
+      },
+      {
+        "month": "2026-04",
+        "accuracy": 0.4666666666666667,
+        "baseline": 0.47619047619047616
+      },
+      {
+        "month": "2026-05",
+        "accuracy": 0.58,
+        "baseline": 0.56
+      },
+      {
+        "month": "2026-06",
+        "accuracy": 0.49523809523809526,
+        "baseline": 0.5238095238095238
+      },
+      {
+        "month": "2026-07",
+        "accuracy": 0.4818181818181818,
+        "baseline": 0.4090909090909091
+      },
+      {
+        "month": "2026-08",
+        "accuracy": 0.580952380952381,
+        "baseline": 0.7047619047619048
+      },
+      {
+        "month": "2026-09",
+        "accuracy": 0.6571428571428571,
+        "baseline": 0.6761904761904762
+      },
+      {
+        "month": "2026-10",
+        "accuracy": 0.6923076923076923,
+        "baseline": 0.6923076923076923
+      }
+    ],
+    "feature_list": [
+      "ret1",
+      "ret5",
+      "ret21",
+      "vol21",
+      "rsi14",
+      "dist_ma50",
+      "drawdown63",
+      "volz"
+    ]
+  },
+  "v3": {
+    "accuracy": 0.5600873998543335,
+    "baseline": 0.5482884195193009,
+    "buy_precision": 0.3877551020408163,
+    "sell_precision": 0.3153409090909091,
+    "train_rows": 6965,
+    "walk_forward": [
+      {
+        "month": "2021-05",
+        "accuracy": 0.62,
+        "baseline": 0.62
+      },
+      {
+        "month": "2021-06",
+        "accuracy": 0.6727272727272727,
+        "baseline": 0.6727272727272727
+      },
+      {
+        "month": "2021-07",
+        "accuracy": 0.7428571428571429,
+        "baseline": 0.7428571428571429
+      },
+      {
+        "month": "2021-08",
+        "accuracy": 0.7181818181818181,
+        "baseline": 0.7181818181818181
+      },
+      {
+        "month": "2021-09",
+        "accuracy": 0.7238095238095238,
+        "baseline": 0.7238095238095238
+      },
+      {
+        "month": "2021-10",
+        "accuracy": 0.4857142857142857,
+        "baseline": 0.5142857142857142
+      },
+      {
+        "month": "2021-11",
+        "accuracy": 0.6666666666666666,
+        "baseline": 0.6666666666666666
+      },
+      {
+        "month": "2021-12",
+        "accuracy": 0.4727272727272727,
+        "baseline": 0.4727272727272727
+      },
+      {
+        "month": "2022-01",
+        "accuracy": 0.34,
+        "baseline": 0.47
+      },
+      {
+        "month": "2022-02",
+        "accuracy": 0.5894736842105263,
+        "baseline": 0.6
+      },
+      {
+        "month": "2022-03",
+        "accuracy": 0.3652173913043478,
+        "baseline": 0.41739130434782606
+      },
+      {
+        "month": "2022-04",
+        "accuracy": 0.48,
+        "baseline": 0.49
+      },
+      {
+        "month": "2022-05",
+        "accuracy": 0.3904761904761905,
+        "baseline": 0.4095238095238095
+      },
+      {
+        "month": "2022-06",
+        "accuracy": 0.45714285714285713,
+        "baseline": 0.41904761904761906
+      },
+      {
+        "month": "2022-07",
+        "accuracy": 0.33,
+        "baseline": 0.53
+      },
+      {
+        "month": "2022-08",
+        "accuracy": 0.3217391304347826,
+        "baseline": 0.4956521739130435
+      },
+      {
+        "month": "2022-09",
+        "accuracy": 0.3523809523809524,
+        "baseline": 0.4380952380952381
+      },
+      {
+        "month": "2022-10",
+        "accuracy": 0.44761904761904764,
+        "baseline": 0.34285714285714286
+      },
+      {
+        "month": "2022-11",
+        "accuracy": 0.44761904761904764,
+        "baseline": 0.45714285714285713
+      },
+      {
+        "month": "2022-12",
+        "accuracy": 0.5142857142857142,
+        "baseline": 0.4857142857142857
+      },
+      {
+        "month": "2023-01",
+        "accuracy": 0.41,
+        "baseline": 0.68
+      },
+      {
+        "month": "2023-02",
+        "accuracy": 0.6,
+        "baseline": 0.6
+      },
+      {
+        "month": "2023-03",
+        "accuracy": 0.5391304347826087,
+        "baseline": 0.5304347826086957
+      },
+      {
+        "month": "2023-04",
+        "accuracy": 0.631578947368421,
+        "baseline": 0.7157894736842105
+      },
+      {
+        "month": "2023-05",
+        "accuracy": 0.6181818181818182,
+        "baseline": 0.5909090909090909
+      },
+      {
+        "month": "2023-06",
+        "accuracy": 0.6285714285714286,
+        "baseline": 0.638095238095238
+      },
+      {
+        "month": "2023-07",
+        "accuracy": 0.61,
+        "baseline": 0.63
+      },
+      {
+        "month": "2023-08",
+        "accuracy": 0.6869565217391305,
+        "baseline": 0.5565217391304348
+      },
+      {
+        "month": "2023-09",
+        "accuracy": 0.54,
+        "baseline": 0.54
+      },
+      {
+        "month": "2023-10",
+        "accuracy": 0.509090909090909,
+        "baseline": 0.4636363636363636
+      },
+      {
+        "month": "2023-11",
+        "accuracy": 0.638095238095238,
+        "baseline": 0.638095238095238
+      },
+      {
+        "month": "2023-12",
+        "accuracy": 0.77,
+        "baseline": 0.78
+      },
+      {
+        "month": "2024-01",
+        "accuracy": 0.47619047619047616,
+        "baseline": 0.4857142857142857
+      },
+      {
+        "month": "2024-02",
+        "accuracy": 0.67,
+        "baseline": 0.62
+      },
+      {
+        "month": "2024-03",
+        "accuracy": 0.66,
+        "baseline": 0.67
+      },
+      {
+        "month": "2024-04",
+        "accuracy": 0.6090909090909091,
+        "baseline": 0.5181818181818182
+      },
+      {
+        "month": "2024-05",
+        "accuracy": 0.6636363636363637,
+        "baseline": 0.6818181818181818
+      },
+      {
+        "month": "2024-06",
+        "accuracy": 0.5263157894736842,
+        "baseline": 0.5263157894736842
+      },
+      {
+        "month": "2024-07",
+        "accuracy": 0.4909090909090909,
+        "baseline": 0.5181818181818182
+      },
+      {
+        "month": "2024-08",
+        "accuracy": 0.45454545454545453,
+        "baseline": 0.4818181818181818
+      },
+      {
+        "month": "2024-09",
+        "accuracy": 0.56,
+        "baseline": 0.57
+      },
+      {
+        "month": "2024-10",
+        "accuracy": 0.6,
+        "baseline": 0.6173913043478261
+      },
+      {
+        "month": "2024-11",
+        "accuracy": 0.61,
+        "baseline": 0.62
+      },
+      {
+        "month": "2024-12",
+        "accuracy": 0.5714285714285714,
+        "baseline": 0.5428571428571428
+      },
+      {
+        "month": "2025-01",
+        "accuracy": 0.42,
+        "baseline": 0.49
+      },
+      {
+        "month": "2025-02",
+        "accuracy": 0.6,
+        "baseline": 0.4842105263157895
+      },
+      {
+        "month": "2025-03",
+        "accuracy": 0.4380952380952381,
+        "baseline": 0.4380952380952381
+      },
+      {
+        "month": "2025-04",
+        "accuracy": 0.4666666666666667,
+        "baseline": 0.5047619047619047
+      },
+      {
+        "month": "2025-05",
+        "accuracy": 0.6095238095238096,
+        "baseline": 0.4857142857142857
+      },
+      {
+        "month": "2025-06",
+        "accuracy": 0.72,
+        "baseline": 0.69
+      },
+      {
+        "month": "2025-07",
+        "accuracy": 0.7,
+        "baseline": 0.6909090909090909
+      },
+      {
+        "month": "2025-08",
+        "accuracy": 0.6190476190476191,
+        "baseline": 0.6190476190476191
+      },
+      {
+        "month": "2025-09",
+        "accuracy": 0.6666666666666666,
+        "baseline": 0.6476190476190476
+      },
+      {
+        "month": "2025-10",
+        "accuracy": 0.6086956521739131,
+        "baseline": 0.6434782608695652
+      },
+      {
+        "month": "2025-11",
+        "accuracy": 0.5684210526315789,
+        "baseline": 0.5789473684210527
+      },
+      {
+        "month": "2025-12",
+        "accuracy": 0.6909090909090909,
+        "baseline": 0.6727272727272727
+      },
+      {
+        "month": "2026-01",
+        "accuracy": 0.52,
+        "baseline": 0.55
+      },
+      {
+        "month": "2026-02",
+        "accuracy": 0.5052631578947369,
+        "baseline": 0.6421052631578947
+      },
+      {
+        "month": "2026-03",
+        "accuracy": 0.6363636363636364,
+        "baseline": 0.6727272727272727
+      },
+      {
+        "month": "2026-04",
+        "accuracy": 0.45714285714285713,
+        "baseline": 0.47619047619047616
+      },
+      {
+        "month": "2026-05",
+        "accuracy": 0.58,
+        "baseline": 0.56
+      },
+      {
+        "month": "2026-06",
+        "accuracy": 0.5142857142857142,
+        "baseline": 0.5238095238095238
+      },
+      {
+        "month": "2026-07",
+        "accuracy": 0.4909090909090909,
+        "baseline": 0.4090909090909091
+      },
+      {
+        "month": "2026-08",
+        "accuracy": 0.6190476190476191,
+        "baseline": 0.7047619047619048
+      },
+      {
+        "month": "2026-09",
+        "accuracy": 0.6857142857142857,
+        "baseline": 0.6761904761904762
+      },
+      {
+        "month": "2026-10",
+        "accuracy": 0.6923076923076923,
+        "baseline": 0.6923076923076923
+      }
+    ],
+    "feature_list": [
+      "ret1",
+      "ret5",
+      "ret21",
+      "vol21",
+      "rsi14",
+      "dist_ma50",
+      "drawdown63",
+      "volz",
+      "days_to_fomc",
+      "fomc_day",
+      "days_to_cpi",
+      "cpi_day",
+      "nfp_day",
+      "days_to_earnings",
+      "earnings_soon",
+      "just_reported",
+      "witching_day",
+      "opex_day",
+      "quarter_turn",
+      "santa_window",
+      "january_flag",
+      "september_flag",
+      "may_oct_flag",
+      "december_flag",
+      "pre_holiday",
+      "day_of_week"
+    ],
+    "feature_importance": {
+      "ret1": 0.03760793676574651,
+      "ret5": 0.04217068551821237,
+      "ret21": 0.0652783840978658,
+      "vol21": 0.32980488228144217,
+      "rsi14": 0.04516040648262553,
+      "dist_ma50": 0.07446514289995362,
+      "drawdown63": 0.14030638014856123,
+      "volz": 0.024385790949289356,
+      "days_to_fomc": 0.03274891390844647,
+      "fomc_day": 0.00027839878300446374,
+      "days_to_cpi": 0.02130017470134406,
+      "cpi_day": 5.438804288725228e-05,
+      "nfp_day": 2.6791564654284767e-05,
+      "days_to_earnings": 0.1507431401845933,
+      "earnings_soon": 0.01539861021196718,
+      "just_reported": 0.00010192475956551667,
+      "witching_day": 0.0,
+      "opex_day": 0.00010361842322948229,
+      "quarter_turn": 0.0009176758882662022,
+      "santa_window": 0.0006112389286579377,
+      "january_flag": 0.004083026565627453,
+      "september_flag": 0.000625500862719375,
+      "may_oct_flag": 0.006805653116156759,
+      "december_flag": 0.0014848371241172485,
+      "pre_holiday": 7.442719742592706e-05,
+      "day_of_week": 0.005462070593640666
+    },
+    "calendar_features_used": [
+      "days_to_earnings",
+      "days_to_fomc",
+      "days_to_cpi",
+      "earnings_soon",
+      "may_oct_flag",
+      "day_of_week",
+      "january_flag",
+      "december_flag",
+      "quarter_turn",
+      "september_flag",
+      "santa_window",
+      "fomc_day",
+      "opex_day",
+      "just_reported",
+      "pre_holiday",
+      "cpi_day",
+      "nfp_day"
+    ],
+    "calendar_features_ignored": [
+      "witching_day"
+    ],
+    "calendar_importance_words": "Top calendar features by importance: days_to_earnings#2, days_to_fomc#9, days_to_cpi#11, earnings_soon#12, may_oct_flag#13. Ignored (\u22480 importance): witching_day."
+  },
+  "gate": {
+    "passed": false,
+    "verdict": "Rejected",
+    "reasons": [
+      "buy precision 0.3878 < base 0.3881",
+      "sell precision 0.3153 < base 0.3190"
+    ],
+    "checks": {
+      "accuracy_base": 0.558339402767662,
+      "accuracy_challenger": 0.5600873998543335,
+      "accuracy_beats_base": true,
+      "buy_precision_base": 0.3881118881118881,
+      "buy_precision_challenger": 0.3877551020408163,
+      "buy_precision_ok": false,
+      "sell_precision_base": 0.31899641577060933,
+      "sell_precision_challenger": 0.3153409090909091,
+      "sell_precision_ok": false,
+      "disastrous_months": [],
+      "month_ok": true
+    },
+    "active_model": "v1"
+  }
+}
