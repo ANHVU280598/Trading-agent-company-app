@@ -1,5 +1,55 @@
 # Muse ↔ Cursor — Team Channel
 
+## 2026-10-28 — Model v3 Step 1: events calendar (counts for Anh)
+
+**Step:** Model v3 / Step 1 only — build events calendar  
+**Base model:** v1 (Phase 4 gate Rejected on PR #3; v2 not activated)  
+**What changed:**
+- SQLite `events` table + committed `data/events.csv` + `data/events_counts.json`
+- `core/events_calendar.py` + monthly `scripts/refresh_events.py`
+- Types: `fomc`, `cpi`, `nfp`, `witching`, `opex`, `holiday`, `earnings`
+- Sources: Fed FOMC page; BLS yearly schedules (live 403 → Wayback); NYSE holiday rules; witching/opex calendar rules; Finnhub earnings calendar (upcoming) + Yahoo earnings dates (history)
+- Coverage: **2021-01-01 → 2027-12-24** — **510 rows**
+- Stopped before Step 2 features / train / gate / UI. Live locked. Paper stays on v1.
+
+### Counts by type (all years)
+
+| Type | Rows | Source |
+|------|------|--------|
+| fomc | 56 | federalreserve.gov (decision day = meeting day 2) |
+| cpi | 83 | bls.gov schedules |
+| nfp | 83 | bls.gov Employment Situation |
+| witching | 28 | calendar rule (3rd Fri Mar/Jun/Sep/Dec) |
+| opex | 84 | calendar rule (3rd Fri each month) |
+| holiday | 70 | NYSE full-day rules (+ Juneteenth from 2021) |
+| earnings | 106 | Finnhub upcoming (12) + Yahoo history (97), merged |
+
+### Per-year sanity check (Muse: fomc≈8, witching≈4, opex≈12)
+
+| Year | fomc | witching | opex | Δfomc | Δwitch | Δopex | cpi | nfp | holiday | earnings |
+|------|------|----------|------|-------|---------|--------|-----|-----|---------|----------|
+| 2021 | 8 | 4 | 12 | 0 | 0 | 0 | 12 | 12 | 11 | 16 |
+| 2022 | 8 | 4 | 12 | 0 | 0 | 0 | 12 | 12 | 9 | 16 |
+| 2023 | 8 | 4 | 12 | 0 | 0 | 0 | 12 | 12 | 10 | 16 |
+| 2024 | 8 | 4 | 12 | 0 | 0 | 0 | 12 | 12 | 10 | 16 |
+| 2025 | 8 | 4 | 12 | 0 | 0 | 0 | 11 | 11 | 10 | 16 |
+| 2026 | 8 | 4 | 12 | 0 | 0 | 0 | 12 | 12 | 10 | 17 |
+| 2027 | 8 | 4 | 12 | 0 | 0 | 0 | 12 | 12 | 10 | 9 |
+
+Earnings by ticker: AAPL 26, MSFT 26, NVDA 27, TSLA 27 (SPY ETF → 0).
+
+**Gaps / notes for Anh:**
+- **2025 CPI/NFP = 11** each (not 12): BLS 2025 schedule omits one month each (Oct NFP / Nov CPI) — consistent with 2025 release disruptions; left as published, not invented.
+- **2022 holidays = 9:** New Year’s 2022 observed Fri 2021-12-31 (counted in 2021); expected.
+- BLS live site returns 403 from this environment → Wayback snapshots used; sources URLs recorded in `data/events_counts.json`.
+- Finnhub free `calendar/earnings` returns mostly upcoming only → Yahoo fills history; logged in DECISIONS (actual report dates = accepted noise per Muse).
+
+**Check:** pytest events tests + suite green. Refresh: `python scripts/refresh_events.py`.
+
+**Blocked:** none for Step 1. Waiting on Anh before v3 Step 2+.
+
+— Cursor
+
 ## 2026-10-27 — xAI/Grok sentiment wired
 
 **Step:** Wire Grok news sentiment (addendum §6)  

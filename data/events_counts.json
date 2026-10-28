@@ -1,0 +1,132 @@
+{
+  "start": "2021-01-01",
+  "end": "2027-12-31",
+  "sources": {
+    "fomc": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "bls": [
+      "https://web.archive.org/web/20261018191922/https://www.bls.gov/schedule/2021/home.htm",
+      "https://web.archive.org/web/20260819060327/https://www.bls.gov/schedule/2022/home.htm",
+      "https://web.archive.org/web/20261018141932/https://www.bls.gov/schedule/2023/home.htm",
+      "https://web.archive.org/web/20260930044726/https://www.bls.gov/schedule/2024/home.htm",
+      "https://web.archive.org/web/20260819060328/https://www.bls.gov/schedule/2025/home.htm",
+      "https://web.archive.org/web/20261026174611/https://www.bls.gov/schedule/2026/home.htm",
+      "https://web.archive.org/web/20261019223108/https://www.bls.gov/schedule/2027/home.htm",
+      "https://web.archive.org/web/20261010125140/https://www.bls.gov/schedule/news_release/bls.ics"
+    ],
+    "earnings_finnhub": "finnhub.io/calendar/earnings",
+    "earnings_yahoo": "yahoo_finance:get_earnings_dates"
+  },
+  "earnings_finnhub_rows": 12,
+  "earnings_yahoo_rows": 97,
+  "counts": {
+    "by_type": {
+      "fomc": 56,
+      "cpi": 83,
+      "nfp": 83,
+      "witching": 28,
+      "opex": 84,
+      "holiday": 70,
+      "earnings": 106
+    },
+    "by_year": {
+      "2021": {
+        "fomc": 8,
+        "cpi": 12,
+        "nfp": 12,
+        "witching": 4,
+        "opex": 12,
+        "holiday": 11,
+        "earnings": 16,
+        "_sanity_fomc_delta": 0,
+        "_sanity_witching_delta": 0,
+        "_sanity_opex_delta": 0
+      },
+      "2022": {
+        "fomc": 8,
+        "cpi": 12,
+        "nfp": 12,
+        "witching": 4,
+        "opex": 12,
+        "holiday": 9,
+        "earnings": 16,
+        "_sanity_fomc_delta": 0,
+        "_sanity_witching_delta": 0,
+        "_sanity_opex_delta": 0
+      },
+      "2023": {
+        "fomc": 8,
+        "cpi": 12,
+        "nfp": 12,
+        "witching": 4,
+        "opex": 12,
+        "holiday": 10,
+        "earnings": 16,
+        "_sanity_fomc_delta": 0,
+        "_sanity_witching_delta": 0,
+        "_sanity_opex_delta": 0
+      },
+      "2024": {
+        "fomc": 8,
+        "cpi": 12,
+        "nfp": 12,
+        "witching": 4,
+        "opex": 12,
+        "holiday": 10,
+        "earnings": 16,
+        "_sanity_fomc_delta": 0,
+        "_sanity_witching_delta": 0,
+        "_sanity_opex_delta": 0
+      },
+      "2025": {
+        "fomc": 8,
+        "cpi": 11,
+        "nfp": 11,
+        "witching": 4,
+        "opex": 12,
+        "holiday": 10,
+        "earnings": 16,
+        "_sanity_fomc_delta": 0,
+        "_sanity_witching_delta": 0,
+        "_sanity_opex_delta": 0
+      },
+      "2026": {
+        "fomc": 8,
+        "cpi": 12,
+        "nfp": 12,
+        "witching": 4,
+        "opex": 12,
+        "holiday": 10,
+        "earnings": 17,
+        "_sanity_fomc_delta": 0,
+        "_sanity_witching_delta": 0,
+        "_sanity_opex_delta": 0
+      },
+      "2027": {
+        "fomc": 8,
+        "cpi": 12,
+        "nfp": 12,
+        "witching": 4,
+        "opex": 12,
+        "holiday": 10,
+        "earnings": 9,
+        "_sanity_fomc_delta": 0,
+        "_sanity_witching_delta": 0,
+        "_sanity_opex_delta": 0
+      }
+    },
+    "sanity": {
+      "fomc": 8,
+      "witching": 4,
+      "opex": 12
+    },
+    "date_min": "2021-01-01",
+    "date_max": "2027-12-24",
+    "total_rows": 510,
+    "earnings_by_ticker": {
+      "AAPL": 26,
+      "MSFT": 26,
+      "NVDA": 27,
+      "TSLA": 27
+    }
+  }
+}

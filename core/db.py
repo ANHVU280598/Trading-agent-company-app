@@ -50,6 +50,7 @@ SIGNAL_GRADE_COLUMNS = [
     "spy_ret_5d",
     "spy_ret_20d",
 ]
+EVENT_COLUMNS = ["date", "type", "source", "ticker"]
 
 
 def connect(db_path: Path = DB_PATH) -> sqlite3.Connection:
@@ -125,6 +126,13 @@ def init_db(db_path: Path = DB_PATH) -> None:
         spy_ret_5d REAL,
         spy_ret_20d REAL,
         PRIMARY KEY (date, ticker)
+    );
+    CREATE TABLE IF NOT EXISTS events (
+        date TEXT NOT NULL,
+        type TEXT NOT NULL,
+        source TEXT,
+        ticker TEXT NOT NULL DEFAULT '',
+        PRIMARY KEY (date, type, ticker)
     );
     """
     with connect(db_path) as conn:
@@ -252,3 +260,31 @@ def replace_table(table: str, frame: pd.DataFrame, db_path: Path = DB_PATH) -> N
         if not frame.empty:
             frame.to_sql(table, conn, if_exists="append", index=False)
         conn.commit()
+
+
+def read_events(db_path: Path = DB_PATH) -> pd.DataFrame:
+    init_db(db_path)
+    try:
+        with connect(db_path) as conn:
+            df = pd.read_sql_query(
+                "SELECT date, type, source, ticker FROM events "
+                "ORDER BY date, type, ticker",
+                conn,
+            )
+    except sqlite3.OperationalError:
+        return _empty(EVENT_COLUMNS)
+    if df.empty:
+        return _empty(EVENT_COLUMNS)
+    return df
+
+
+def replace_events(frame: pd.DataFrame, db_path: Path = DB_PATH) -> int:
+    """Replace the events table from a frame. Returns row count written."""
+    cols = EVENT_COLUMNS
+    out = frame.copy() if not frame.empty else pd.DataFrame(columns=cols)
+    for c in cols:
+        if c not in out.columns:
+            out[c] = ""
+    out = out[cols].fillna("")
+    replace_table("events", out, db_path)
+    return int(len(out))
