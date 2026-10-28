@@ -185,27 +185,21 @@ def main() -> None:
 
         indexed = bars.set_index("date")
         indexed.index = indexed.index.astype(str)
-        use_v2 = model_version == "v2" or (
-            model is not None
-            and hasattr(model, "feature_names_in_")
-            and "sentiment" in list(model.feature_names_in_)
-        )
-        if use_v2 and not spy_bars.empty:
-            import pandas as pd
-
-            sent_s = pd.Series(
-                {as_of: sentiment if sentiment is not None else 0.0}
+        # Always compute v2 display features (sentiment/headlines/regime/rs21)
+        # for the Signals page; inference uses only the active model's columns.
+        sent_s = pd.Series({as_of: sentiment if sentiment is not None else 0.0})
+        hc_s = pd.Series({as_of: float(headline_count)})
+        ns_all = db.read_news_sentiment(args.db)
+        sub = ns_all[ns_all["ticker"] == ticker] if not ns_all.empty else ns_all
+        if not sub.empty:
+            sent_s = sub.set_index("date")["sentiment"]
+            hc_s = sub.set_index("date")["headline_count"]
+            sent_s.index = sent_s.index.astype(str)
+            hc_s.index = hc_s.index.astype(str)
+        if not spy_bars.empty:
+            feats = build_features_v2(
+                indexed, spy_bars, sentiment=sent_s, headline_count=hc_s
             )
-            hc_s = pd.Series({as_of: float(headline_count)})
-            # full history series for join
-            ns_all = db.read_news_sentiment(args.db)
-            sub = ns_all[ns_all["ticker"] == ticker] if not ns_all.empty else ns_all
-            if not sub.empty:
-                sent_s = sub.set_index("date")["sentiment"]
-                hc_s = sub.set_index("date")["headline_count"]
-                sent_s.index = sent_s.index.astype(str)
-                hc_s.index = hc_s.index.astype(str)
-            feats = build_features_v2(indexed, spy_bars, sentiment=sent_s, headline_count=hc_s)
         else:
             feats = build_features(indexed)
 
@@ -228,6 +222,11 @@ def main() -> None:
         spy_regime_val = None
         if row is not None and "spy_regime" in row.index:
             spy_regime_val = int(row["spy_regime"])
+        # Prefer feature-row sentiment/count (0 on no-news) over unset scorer vars
+        if row is not None and "sentiment" in row.index:
+            sentiment = float(row["sentiment"])
+        if row is not None and "headline_count" in row.index:
+            headline_count = int(row["headline_count"])
         signal_rows.append(
             {
                 "date": as_of,

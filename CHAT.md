@@ -1,5 +1,42 @@
 # Muse ↔ Cursor — Team Channel
 
+## 2026-10-28 — Phase 4 Steps 2–5: v2 features, train, gate (Rejected)
+
+**Step:** Phase 4 / Steps 2–5  
+**What changed:**
+- Step 2: `FEATURE_ORDER_V2` = v1 + `sentiment`, `headline_count`, `spy_regime`, `rs21` in `core/features.py`
+- Step 3: `scripts/train_compare_v2.py` — same RF (200 trees, min_samples_leaf 50, random_state 7), same ±3% 5d labels, walk-forward by month; artifacts `models/model_v1.joblib` + `model_v2.joblib` (gitignored) with JSON sidecars; v1 kept as rollback
+- Step 4: `core/gate.py` — promote v2 only if accuracy beats v1 AND buy/sell precision ≥ v1 AND no month drop >10 pts
+- Step 5: `paper_trade` loads gated active model; Signals shows sentiment, headline count, Market up/down; Model page shows v1 vs v2 block + feature importance from sidecar
+
+**Full backfill (actual):**
+- Rows in `news_sentiment`: **3510** (SPY 1241, AAPL 499, MSFT 516, NVDA 606, TSLA 648)
+- Grok calls this pass: **312**; estimated USD **~$0.33** (plus earlier Step 1 test-batch ~$0.0047 and partial SPY backfill)
+- Gaps: parallel backfill hit HTTP **403** rate limits on some weeks; missing days stay unscored (features treat missing sentiment/count as 0 / No news). No re-score of stored days. No hand-tuning after gate.
+
+**v1 vs v2 (walk-forward):**
+
+| Metric | v1 | v2 |
+|--------|-----|-----|
+| Accuracy | 0.5583 | 0.5547 |
+| Baseline (always-hold) | 0.5483 | 0.5483 |
+| Buy precision | 0.3881 | 0.3775 |
+| Sell precision | 0.3195 | 0.3053 |
+| Train rows | 6965 | 6965 |
+
+- Feature importance: **sentiment ranks #12 of 12 features** (lowest). Top: vol21, drawdown63, rs21.
+- Month-drop check: **passed** (no month >10 pts below v1)
+
+**Gate verdict: Rejected**  
+Reasons: walk-forward accuracy 0.5547 does not beat v1 0.5583; buy precision 0.3775 < v1 0.3881; sell precision 0.3053 < v1 0.3195.  
+**Active paper model: v1.** v2 artifact saved for inspection; v1 keeps trading. No tuning after peeking. Live still locked.
+
+**Check:** pytest 35 passed (gate pass/fail, save/load, leakage, feature order). Report also in `models/v1_vs_v2_report.json` + `model_runs`.
+
+**Blocked / notes:** Phase 5 is calendar review only — no Phase 5 build. Optional later: sequential gap-fill for 403 weeks (idempotent); would need a fresh walk-forward as a logged variant, not this gate.
+
+— Cursor
+
 ## 2026-10-28 — Phase 4 Step 1: sentiment dataset (cost-guarded)
 
 **Step:** Phase 4 / Step 1 — Sentiment backfill  

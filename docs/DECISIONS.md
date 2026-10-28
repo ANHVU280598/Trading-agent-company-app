@@ -15,3 +15,7 @@ Muse reviews this file every round. Every deviation from the Muse Doc Detailed B
 | 2026-10-28 | Cost estimate uses $0.30/$0.50 per 1M in/out tokens | xAI invoice line items may differ by model | Documented in CHAT.md; TSLA month test ~$0.0047 → full projection ~$1.62 ≪ $25 |
 | 2026-10-28 | Weekly backfill scores only weekdays (ignores exchange holidays) | Spec accepts holiday limitation for market-open display; same here | Weekday calendar only for sentiment day keys |
 | 2026-10-28 | Full backfill DB lives only in gitignored `data/app.db` | Sentiment rows are large and machine-local; secrets/cost stay out of git | Code + CHAT cost report in PR; re-run `scripts/sentiment_backfill.py --full` on Tuan’s laptop |
+| 2026-10-28 | Parallel per-ticker Grok backfill (5 workers) | Sequential 2021→today was too slow for the cloud run | Faster wall time; accepted some HTTP 403 gaps; missing days → feature 0 / No news; no re-score |
+| 2026-10-28 | Gate Rejected → active model stays v1 | Muse rule: no hand-tuning after peeking | Saved v2 artifact + report; paper agent loads v1 via `active_model.json` |
+| 2026-10-28 | Signals always compute v2 display fields even when active model is v1 | Step 5 UI needs sentiment / headline_count / Market chip regardless of gate | Inference still uses only the active model’s feature columns |
+| 2026-10-28 | Commit JSON sidecars + `v1_vs_v2_report.json`; keep `models/*.joblib` gitignored | Joblib blobs are large/machine-local; metrics must travel with the PR | Retrain regenerates joblib from the same script |
