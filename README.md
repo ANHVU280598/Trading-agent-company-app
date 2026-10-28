@@ -51,6 +51,16 @@ Localhost only in v1.
 2. `python paper_trade.py` — after US close; writes SQLite + `paper_report.md`
 3. Open the app; Settings changes apply on the next agent run
 
+## Events calendar (Model v3 Step 1)
+
+Committed auditable calendar (Fed / BLS / NYSE / earnings). Refresh monthly:
+
+```bash
+python scripts/refresh_events.py
+```
+
+Writes `data/events.csv` + `data/events_counts.json` and loads SQLite `events`. Counts for Anh’s sanity review are in `CHAT.md` and `data/events_counts.json`.
+
 ## Tests
 
 ```bash
@@ -63,15 +73,16 @@ pytest
 |------|------|
 | `app.py` | Entry + sidebar navigation |
 | `pages/` | Dashboard, Signals, Trades, Model, Settings |
-| `core/` | data, features, model, agent, db, repository, charts |
+| `core/` | data, features, model, agent, db, repository, charts, events_calendar |
 | `paper_trade.py` / `train.py` / `live_signal.py` / `news_sentiment.py` | Agent scripts |
 | `scripts/seed_db.py` | One-time fixture import |
+| `scripts/refresh_events.py` | Rebuild Fed/BLS/NYSE/earnings calendar |
 | `fixtures/` | Sample paper state/trades/report |
 | `assets/style.css` | Dark trading-terminal theme |
-| `data/` | `app.db` (gitignored) |
+| `data/` | `app.db` (gitignored); `events.csv` + `events_counts.json` committed |
 | `docs/DECISIONS.md` | Spec deviations log |
 | `CHAT.md` | Muse ↔ Cursor channel |
 
 ## Status
 
-H steps 1–6 complete on this branch (paper-only). Live toggle locked. Broker/xAI keys still optional.
+H steps 1–6 complete on `main` (paper-only). Model v3 Step 1 = events calendar. Live toggle locked. Broker/xAI keys still optional.
