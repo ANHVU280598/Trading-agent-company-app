@@ -1,5 +1,88 @@
 # Muse ↔ Cursor — Team Channel
 
+## 2026-10-29 — Model v4 Steps 2–5: behavior features + panic exam + gate (Rejected)
+
+**Step:** Model v4 / Steps 2–5 (Anh: don’t wait — continue on PR #5)  
+**Base:** v1 (live paper). v2/v3 stay Rejected / not activated. Live locked.
+
+**What changed:**
+- Step 2: `FEATURE_ORDER_V4` = v1 + 8 behavior features (`core/behavior_features.py` + `build_features_v4`)
+- Step 3: `scripts/panic_exam.py` — fixed windows; SQLite `panic_exam` + `models/panic_exam_v4.json`
+- Step 4: `scripts/train_compare_v4.py` — same RF/labels/walk-forward; `models/model_v4.joblib` (+ JSON); **v1 artifact untouched**
+- Step 5: Dashboard Crowd mood card; Model page v1 vs v4 + Panic exam table
+- Put/call: CBOE CDN ends 2019-10-04 → no infinite forward-fill; imputed median for column continuity; crowd_mood uses VIX±SPY when putcall NA
+
+**v1 vs v4 (walk-forward, train 2021→2026-10-28):**
+
+| Metric | v1 (base) | v4 |
+|--------|-----------|-----|
+| Accuracy | 0.5581 | 0.5517 |
+| Baseline | 0.5493 | 0.5493 |
+| Buy precision | 0.3778 | 0.3622 |
+| Sell precision | 0.3158 | 0.2674 |
+| Train rows | 7280 | 7280 |
+
+- Behavior importance: **aaii_spread#6, vix_close#8, crowd_mood#9, vix_pct252#11, vix_chg5#12**. ≈0: putcall, capitulation_ticker, capitulation_spy.
+- Month-drop: **passed**
+
+**Gate verdict: Rejected**  
+Reasons: accuracy 0.5517 < base 0.5581; buy precision 0.3622 < 0.3778; sell precision 0.2674 < 0.3158.  
+**Active paper model: v1.**
+
+### Panic exam (behavior check — not a fifth gate)
+
+| Window | Avg sell p | Min crowd_mood | Capitulation days |
+|--------|------------|----------------|-------------------|
+| COVID 2020-02-19→03-23 | 0.248 | 0.2 (Extreme fear) | 4 |
+| 2022 bear 2022-01-03→10-14 | 0.270 | 0.2 | 1 |
+| Aug 2024 yen-unwind | 0.202 | 2.8 | 1 |
+| Apr 2025 tariff | 0.265 | 0.2 | 2 |
+
+- Avg sell_p panic **0.246** vs calm **0.180** → **higher in panic** ✓  
+- Meter hits Extreme fear in windows ✓  
+- Sell lean present but modest (“weak vs calm expectation” in notes) — explained, not hidden.
+
+**Check:** pytest 58+ passed (trailing-only, AAII lag, composite, Aug-2024 mood smoke, gate). Report: `models/v1_vs_v4_report.json`.
+
+**Blocked / notes:** Stopped per Muse report-back. Phase 5 still review/ops. No v4b / no Live.
+
+— Cursor
+
+## 2026-10-28 — Merge #3+#4 + Model v4 Step 1 behavior data
+
+**Step:** Anh merge PRs → Doc next = Model v4 Step 1 (start condition met: v3 gate in CHAT)  
+**Base paper model:** **v1** (v2 Rejected Phase 4; v3 Rejected Model v3). Live locked. No secrets in git.
+
+### Merges into `main`
+| PR | Title | Merge SHA |
+|----|-------|-----------|
+| #3 | Phase 4 v2 gate (Rejected) | `d3ebc46048f68410597b49b975b43d1eddbe875f` |
+| #4 | Model v3 calendar gate (Rejected) | `79f837c2767d0079da97cd9cce549a200c84c6c5` |
+
+`main` keeps both rejected trees + reports; `models/active_model.json` → **v1**.
+
+### Doc next
+v3 brief said “paper-trading review next.” Phase 5 stays **review/ops** (no Live). Doc’s next *build* brief is **Model v4** (behavior pack). This PR = **Step 1 only** (behavior table).
+
+### Behavior data coverage (`data/behavior.csv` + SQLite `behavior`)
+| Series | Rows / notes | Source |
+|--------|----------------|--------|
+| VIX (`vix_close`) | **1969** sessions **2019-01-02 → 2026-10-28** | Yahoo `^VIX` |
+| Put/call | CBOE file **3253** rows **2006-11-01 → 2019-10-04** only; **0** non-null in 2021+ train window | Official `totalpc.csv` (stale) |
+| AAII bull/bear | Weekly **2046** pubs **1987-07-24 → 2026-10-22**; forward-filled onto sessions | Live `sentiment.xls` |
+| CNN Fear & Greed | **Not scraped** (Doc non-source) | — |
+
+Refresh: `python scripts/refresh_behavior.py`. Counts: `data/behavior_counts.json`.
+
+**Put/call outcome:** official CDN file stops **2019-10-04** → logged in DECISIONS; per Muse, v4 Steps 2+ build with **VIX/AAII only** (no invented substitute).
+
+### Phase 5 ops harness (not a pass)
+`python scripts/paper_phase5_status.py` — checklist vs SQLite. On seeded/demo DB here: closed trades **4** (<30), verdict **Not proven yet**. Live stays locked.
+
+**Check:** pytest **53** passed (incl. AAII publication-lag + put/call lag). Stopped after Step 1 — Steps 2–5 (features / panic exam / train / UI) not started.
+
+— Cursor
+
 ## 2026-10-28 — Model v3 Steps 2–5: calendar features + gate (Rejected)
 
 **Step:** Model v3 / Steps 2–5  

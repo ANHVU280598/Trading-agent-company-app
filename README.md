@@ -67,6 +67,17 @@ python scripts/refresh_events.py
 
 Writes `data/events.csv` + `data/events_counts.json` and loads SQLite `events`. Counts for Anh’s sanity review are in `CHAT.md` and `data/events_counts.json`.
 
+## Behavior pack (Model v4)
+
+VIX + CBOE put/call + AAII → `data/behavior.csv` (no CNN Fear & Greed scrape):
+
+```bash
+python scripts/refresh_behavior.py
+python scripts/train_compare_v4.py      # walk-forward + gate + panic exam
+python scripts/panic_exam.py            # re-run exam alone
+python scripts/paper_phase5_status.py   # Phase 5 checklist numbers (ops; Live locked)
+```
+
 ## Tests
 
 ```bash
@@ -79,16 +90,18 @@ pytest
 |------|------|
 | `app.py` | Entry + sidebar navigation |
 | `pages/` | Dashboard, Signals, Trades, Model, Settings |
-| `core/` | data, features, model, agent, db, repository, charts, events_calendar |
+| `core/` | data, features, model, agent, db, repository, charts, events_calendar, behavior_data |
 | `paper_trade.py` / `train.py` / `live_signal.py` / `news_sentiment.py` | Agent scripts |
 | `scripts/seed_db.py` | One-time fixture import |
 | `scripts/refresh_events.py` | Rebuild Fed/BLS/NYSE/earnings calendar |
+| `scripts/refresh_behavior.py` | Rebuild VIX / put-call / AAII behavior table |
+| `scripts/paper_phase5_status.py` | Phase 5 review checklist status (ops) |
 | `fixtures/` | Sample paper state/trades/report |
 | `assets/style.css` | Dark trading-terminal theme |
-| `data/` | `app.db` (gitignored); `events.csv` + `events_counts.json` committed |
+| `data/` | `app.db` (gitignored); `events.csv` / `behavior.csv` + counts JSON committed |
 | `docs/DECISIONS.md` | Spec deviations log |
 | `CHAT.md` | Muse ↔ Cursor channel |
 
 ## Status
 
-H steps 1–6 complete on `main` (paper-only). Model v3 Step 1 = events calendar. Live toggle locked. Broker/xAI keys still optional.
+H steps 1–6 + Phase 4/v3 gates on `main` (both Rejected → paper stays **v1**). Model v4 Step 1 = behavior data. Live toggle locked. Broker/xAI keys still optional.

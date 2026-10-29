@@ -1,11 +1,14 @@
-"""Dashboard — reads SQLite via repository (H step 4)."""
+"""Dashboard — reads SQLite via repository (H step 4 / Model v4 Crowd mood)."""
 
 from __future__ import annotations
 
 import streamlit as st
 
+from core.behavior_data import load_behavior_csv
+from core.behavior_features import build_behavior_features, crowd_mood_label
 from core.charts import portfolio_vs_benchmark
 from core.components import colored_pnl, kpi_card, market_status, signal_badge
+from core.data import get_daily_bars
 from core.formatters import money, pct
 from core.repository import latest_signals, portfolio_meta, positions_with_prices
 from core.ui import empty_panel, page_heading
@@ -16,6 +19,69 @@ with st.spinner("Loading latest data…"):
     meta = portfolio_meta()
     signals = latest_signals()
     positions = positions_with_prices()
+
+
+def _crowd_mood_card() -> None:
+    """Model v4 Step 5 — today's crowd_mood + VIX + put/call."""
+    beh = load_behavior_csv()
+    if beh.empty:
+        return
+    as_of = str(beh["date"].iloc[-1])
+    start = "2019-01-01"
+    try:
+        spy = get_daily_bars("SPY", start, as_of)
+    except Exception:
+        spy = __import__("pandas").DataFrame()
+    if spy.empty:
+        row = beh.iloc[-1]
+        mood = None
+        vix = float(row["vix_close"]) if row["vix_close"] == row["vix_close"] else None
+        pc = float(row["putcall"]) if row["putcall"] == row["putcall"] else None
+    else:
+        indexed = spy.set_index("date")
+        indexed.index = indexed.index.astype(str)
+        feats = build_behavior_features(indexed, indexed, behavior=beh).dropna(
+            subset=["crowd_mood"]
+        )
+        if feats.empty:
+            return
+        last = feats.iloc[-1]
+        mood = float(last["crowd_mood"])
+        vix = float(last["vix_close"]) if last["vix_close"] == last["vix_close"] else None
+        pc = float(last["putcall"]) if last["putcall"] == last["putcall"] else None
+        as_of = str(feats.index[-1])
+    if mood is None:
+        return
+    label = crowd_mood_label(mood)
+    if mood < 40:
+        color = "#EA3943" if mood < 20 else "#E8B33D"
+    elif mood < 60:
+        color = "#848E9C"
+    else:
+        color = "#16C784"
+    pc_disp = "—" if pc is None else f"{pc:.2f}"
+    vix_disp = "—" if vix is None else f"{vix:.2f}"
+    st.markdown('<div class="tac-section">Crowd mood</div>', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="tac-panel">
+          <div class="tac-muted" style="text-transform:none;letter-spacing:0;">
+            as of {as_of} (behavior pack)
+          </div>
+          <div style="font-size:42px;font-weight:700;color:{color};line-height:1.1;margin:8px 0;">
+            {mood:.0f}
+          </div>
+          <div style="color:{color};font-weight:600;margin-bottom:8px;">{label}</div>
+          <div class="tac-muted" style="text-transform:none;letter-spacing:0;">
+            VIX {vix_disp} · Put/call {pc_disp}
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+_crowd_mood_card()
 
 top_l, top_r = st.columns([3, 2])
 with top_l:

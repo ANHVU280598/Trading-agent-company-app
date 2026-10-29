@@ -1,0 +1,42 @@
+{
+  "model_version": "v4",
+  "avg_sell_p_panic": 0.24616996216014558,
+  "avg_sell_p_calm": 0.18033512160506548,
+  "sell_p_higher_in_panic": true,
+  "calm_capitulation_days_total": 0,
+  "windows": [
+    {
+      "model_version": "v4",
+      "window": "COVID crash (2020-02-19\u21922020-03-23)",
+      "avg_sell_p": 0.2480789784309744,
+      "min_crowd_mood": 0.1984126984126984,
+      "capitulation_days": 4,
+      "notes": "avg sell_p=0.248; min crowd_mood=0.2; meter reads Extreme fear; sell lean weak vs calm expectation"
+    },
+    {
+      "model_version": "v4",
+      "window": "2022 bear slide (2022-01-03\u21922022-10-14)",
+      "avg_sell_p": 0.2697660718330587,
+      "min_crowd_mood": 0.1984126984126984,
+      "capitulation_days": 1,
+      "notes": "avg sell_p=0.270; min crowd_mood=0.2; meter reads Extreme fear; sell lean weak vs calm expectation"
+    },
+    {
+      "model_version": "v4",
+      "window": "Aug 2024 yen-unwind (2024-08-01\u21922024-08-09)",
+      "avg_sell_p": 0.20233403909377087,
+      "min_crowd_mood": 2.777777777777777,
+      "capitulation_days": 1,
+      "notes": "avg sell_p=0.202; min crowd_mood=2.8; meter reads Extreme fear; sell lean weak vs calm expectation"
+    },
+    {
+      "model_version": "v4",
+      "window": "Apr 2025 tariff drop (2025-04-02\u21922025-04-11)",
+      "avg_sell_p": 0.26450075928277844,
+      "min_crowd_mood": 0.1984126984126984,
+      "capitulation_days": 2,
+      "notes": "avg sell_p=0.265; min crowd_mood=0.2; meter reads Extreme fear; sell lean weak vs calm expectation"
+    }
+  ],
+  "meta_version": "v4"
+}

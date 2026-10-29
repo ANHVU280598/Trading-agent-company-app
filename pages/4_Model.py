@@ -1,4 +1,4 @@
-"""Model — results + Phase 4 v1 vs v2 + Model v3 v1 vs v3 gates."""
+"""Model — results + Phase 4/v3/v4 gates + panic exam."""
 
 from __future__ import annotations
 
@@ -11,12 +11,14 @@ from core import db
 from core.charts import feature_importance_bars, walk_forward_bars
 from core.components import kpi_card
 from core.config import MODEL_HONESTY
-from core.model_store import V1_META, V2_META, V3_META
+from core.model_store import V1_META, V2_META, V3_META, V4_META
 from core.repository import (
     load_active_model_meta,
+    load_panic_exam_report,
     load_results,
     load_v1_v2_report,
     load_v1_v3_report,
+    load_v1_v4_report,
 )
 from core.ui import page_heading
 
@@ -29,9 +31,12 @@ with st.spinner("Loading latest data…"):
     results = load_results()
     compare_v2 = load_v1_v2_report()
     compare_v3 = load_v1_v3_report()
+    compare_v4 = load_v1_v4_report()
+    panic_exam = load_panic_exam_report()
     active_meta = load_active_model_meta()
     trades = db.read_trades()
     grades = db.read_signal_grades()
+    panic_rows = db.read_panic_exam()
 
 active_version = str(active_meta.get("version") or "v1")
 display_acc = None
@@ -39,7 +44,7 @@ display_base = None
 retrain_date = "—"
 
 # Prefer active model's own report side when present (v1 from either gate)
-for compare in (compare_v2, compare_v3):
+for compare in (compare_v4, compare_v2, compare_v3):
     if not compare:
         continue
     side = compare.get(active_version) or compare.get("v1") or {}
@@ -47,7 +52,7 @@ for compare in (compare_v2, compare_v3):
         display_acc = float(side.get("accuracy") or 0)
         display_base = float(side.get("baseline") or 0)
 
-for meta_path in (V3_META, V2_META, V1_META):
+for meta_path in (V4_META, V3_META, V2_META, V1_META):
     if meta_path.exists():
         retrain_date = str(
             json.loads(meta_path.read_text(encoding="utf-8")).get("trained_date")
@@ -93,6 +98,7 @@ else:
 
     st.caption(
         results.get("cost_assumption", "")
+        or (compare_v4.get("v1") or {}).get("cost_assumption", "")
         or (compare_v2.get("v1") or {}).get("cost_assumption", "")
         or (compare_v3.get("v1") or {}).get("cost_assumption", "")
     )
@@ -153,20 +159,82 @@ else:
         )
         if challenger_key == "v2":
             words = ch.get("sentiment_importance_rank_words")
-        else:
+        elif challenger_key == "v3":
             words = ch.get("calendar_importance_words")
+        else:
+            words = ch.get("behavior_importance_words")
         if words:
             st.caption(str(words))
 
+    _gate_block("v1 vs v4 (Model v4 gate)", compare_v4, "v4")
     _gate_block("v1 vs v2 (Phase 4 gate)", compare_v2, "v2")
     _gate_block("v1 vs v3 (Model v3 gate)", compare_v3, "v3")
+
+    # Panic exam table (behavior check — not a fifth gate)
+    st.markdown('<div class="tac-section">Panic exam</div>', unsafe_allow_html=True)
+    exam_frame = panic_rows
+    if exam_frame.empty and panic_exam.get("windows"):
+        exam_frame = pd.DataFrame(panic_exam["windows"])
+    if exam_frame.empty:
+        st.markdown(
+            '<div class="tac-panel-empty">No panic exam yet. Run scripts/train_compare_v4.py.</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        live_exam = exam_frame
+        if "model_version" in live_exam.columns:
+            prefer = live_exam[live_exam["model_version"] == active_version]
+            if prefer.empty:
+                prefer = live_exam[live_exam["model_version"] == "v4"]
+            if not prefer.empty:
+                live_exam = prefer
+        summary_bits = []
+        if panic_exam:
+            summary_bits.append(
+                f"avg sell_p panic={panic_exam.get('avg_sell_p_panic')} · "
+                f"calm={panic_exam.get('avg_sell_p_calm')} · "
+                f"higher_in_panic={panic_exam.get('sell_p_higher_in_panic')}"
+            )
+        if summary_bits:
+            st.caption(" · ".join(summary_bits) + " (behavior check, not a gate)")
+        body = []
+        for _, r in live_exam.iterrows():
+            sell = r.get("avg_sell_p")
+            mood = r.get("min_crowd_mood")
+            caps = r.get("capitulation_days")
+            sell_s = "—" if sell is None or sell != sell else f"{float(sell) * 100:.1f}%"
+            mood_s = "—" if mood is None or mood != mood else f"{float(mood):.1f}"
+            body.append(
+                "<tr>"
+                f"<td>{r.get('window')}</td>"
+                f"<td class='tac-num'>{sell_s}</td>"
+                f"<td class='tac-num'>{mood_s}</td>"
+                f"<td class='tac-num'>{int(caps) if caps == caps else '—'}</td>"
+                f"<td>{r.get('notes') or '—'}</td>"
+                "</tr>"
+            )
+        st.markdown(
+            f"""
+            <div class="tac-panel">
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <thead><tr class="tac-muted">
+                <th align="left">Window</th><th align="right">Avg sell p</th>
+                <th align="right">Min crowd mood</th><th align="right">Capitulation days</th>
+                <th align="left">Notes</th>
+              </tr></thead>
+              <tbody>{''.join(body)}</tbody>
+            </table>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown(
         '<div class="tac-section">Walk-forward accuracy by month</div>',
         unsafe_allow_html=True,
     )
     wf_source = None
-    for compare in (compare_v2, compare_v3):
+    for compare in (compare_v4, compare_v2, compare_v3):
         if not compare:
             continue
         side = compare.get(active_version) or compare.get("v1") or {}
@@ -205,7 +273,9 @@ else:
     with right:
         st.markdown('<div class="tac-section">Feature importance</div>', unsafe_allow_html=True)
         fi = {}
-        if compare_v3 and (compare_v3.get("v3") or {}).get("feature_importance"):
+        if compare_v4 and (compare_v4.get("v4") or {}).get("feature_importance"):
+            fi = compare_v4["v4"]["feature_importance"]
+        elif compare_v3 and (compare_v3.get("v3") or {}).get("feature_importance"):
             fi = compare_v3["v3"]["feature_importance"]
         elif compare_v2 and (compare_v2.get("v2") or {}).get("feature_importance"):
             fi = compare_v2["v2"]["feature_importance"]

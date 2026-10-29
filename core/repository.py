@@ -24,6 +24,8 @@ ET = ZoneInfo("America/New_York")
 RESULTS_PATH = ROOT / "results.json"
 V1_V2_REPORT_PATH = ROOT / "models" / "v1_vs_v2_report.json"
 V1_V3_REPORT_PATH = ROOT / "models" / "v1_vs_v3_report.json"
+V1_V4_REPORT_PATH = ROOT / "models" / "v1_vs_v4_report.json"
+PANIC_EXAM_REPORT_PATH = ROOT / "models" / "panic_exam_v4.json"
 ACTIVE_MODEL_PATH = ROOT / "models" / "active_model.json"
 
 
@@ -146,6 +148,18 @@ def load_v1_v2_report(path: Path = V1_V2_REPORT_PATH) -> dict[str, Any]:
 
 
 def load_v1_v3_report(path: Path = V1_V3_REPORT_PATH) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def load_v1_v4_report(path: Path = V1_V4_REPORT_PATH) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def load_panic_exam_report(path: Path = PANIC_EXAM_REPORT_PATH) -> dict[str, Any]:
     if not path.exists():
         return {}
     return json.loads(path.read_text(encoding="utf-8"))
