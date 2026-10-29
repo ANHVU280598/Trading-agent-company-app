@@ -18,8 +18,14 @@ from dotenv import load_dotenv
 from core.agent import buys_frozen, confidence_gate, position_buy_shares
 from core.config import DB_PATH, ROOT, STARTING_PAPER_CASH
 from core.data import get_daily_bars, get_headlines
+from core.behavior_data import load_behavior_csv
 from core.events_calendar import load_events_csv
-from core.features import build_features, build_features_v2, build_features_v3
+from core.features import (
+    build_features,
+    build_features_v2,
+    build_features_v3,
+    build_features_v4,
+)
 from core.model_store import load_active_model
 from core.repository import load_settings
 from core import db
@@ -101,7 +107,12 @@ def main() -> None:
 
     settings = load_settings(args.db)
     as_of = args.date or datetime.now(ET).strftime("%Y-%m-%d")
-    start = (datetime.strptime(as_of, "%Y-%m-%d") - timedelta(days=400)).strftime("%Y-%m-%d")
+    # Warm trailing windows (v4 needs ~1y+ VIX/SPY history); still cheap via Yahoo.
+    start = "2019-01-01"
+    if datetime.strptime(as_of, "%Y-%m-%d") < datetime(2019, 6, 1):
+        start = (datetime.strptime(as_of, "%Y-%m-%d") - timedelta(days=400)).strftime(
+            "%Y-%m-%d"
+        )
 
     state = load_state()
     positions = _normalize_positions(state)
@@ -113,7 +124,7 @@ def main() -> None:
     new_trades: list[dict] = []
     broker_notes: list[str] = []
 
-    # Gated artifact (v2/v3 if Kept, else v1). Legacy model.joblib fallback.
+    # Gated artifact (v2/v3/v4 if Kept, else v1). Legacy model.joblib fallback.
     model = None
     model_version = "none"
     model_meta: dict = {}
@@ -134,6 +145,13 @@ def main() -> None:
             events = db.read_events(args.db)
         except Exception:
             events = pd.DataFrame()
+
+    behavior = load_behavior_csv()
+    if behavior.empty:
+        try:
+            behavior = db.read_behavior(args.db)
+        except Exception:
+            behavior = pd.DataFrame()
 
     spy_bars = get_daily_bars("SPY", start, as_of)
     spy_bars = spy_bars[spy_bars["date"] <= as_of] if not spy_bars.empty else spy_bars
@@ -211,13 +229,17 @@ def main() -> None:
         else:
             feats = build_features(indexed)
 
-        use_v3 = model_version == "v3" or (
-            model is not None
-            and hasattr(model, "feature_names_in_")
-            and "days_to_fomc" in list(model.feature_names_in_)
+        feat_names = (
+            list(model.feature_names_in_)
+            if model is not None and hasattr(model, "feature_names_in_")
+            else []
         )
+        use_v4 = model_version == "v4" or "crowd_mood" in feat_names
+        use_v3 = model_version == "v3" or "days_to_fomc" in feat_names
         infer_feats = feats
-        if use_v3 and not events.empty:
+        if use_v4 and not spy_bars.empty:
+            infer_feats = build_features_v4(indexed, spy_bars, behavior=behavior)
+        elif use_v3 and not events.empty:
             infer_feats = build_features_v3(indexed, events, ticker)
 
         row = feats.dropna().iloc[-1] if not feats.dropna().empty else None

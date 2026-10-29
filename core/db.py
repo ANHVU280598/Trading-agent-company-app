@@ -54,6 +54,14 @@ SIGNAL_GRADE_COLUMNS = [
 ]
 EVENT_COLUMNS = ["date", "type", "source", "ticker"]
 BEHAVIOR_COLUMNS = ["date", "vix_close", "putcall", "aaii_bull", "aaii_bear"]
+PANIC_EXAM_COLUMNS = [
+    "model_version",
+    "window",
+    "avg_sell_p",
+    "min_crowd_mood",
+    "capitulation_days",
+    "notes",
+]
 
 
 def connect(db_path: Path = DB_PATH) -> sqlite3.Connection:
@@ -154,6 +162,15 @@ def init_db(db_path: Path = DB_PATH) -> None:
         putcall REAL,
         aaii_bull REAL,
         aaii_bear REAL
+    );
+    CREATE TABLE IF NOT EXISTS panic_exam (
+        model_version TEXT NOT NULL,
+        window TEXT NOT NULL,
+        avg_sell_p REAL,
+        min_crowd_mood REAL,
+        capitulation_days INTEGER,
+        notes TEXT,
+        PRIMARY KEY (model_version, window)
     );
     """
     with connect(db_path) as conn:
@@ -403,4 +420,32 @@ def replace_behavior(frame: pd.DataFrame, db_path: Path = DB_PATH) -> int:
             out[c] = pd.NA
     out = out[cols]
     replace_table("behavior", out, db_path)
+    return int(len(out))
+
+
+def read_panic_exam(db_path: Path = DB_PATH) -> pd.DataFrame:
+    init_db(db_path)
+    try:
+        with connect(db_path) as conn:
+            df = pd.read_sql_query(
+                "SELECT model_version, window, avg_sell_p, min_crowd_mood, "
+                "capitulation_days, notes FROM panic_exam "
+                "ORDER BY model_version, window",
+                conn,
+            )
+    except sqlite3.OperationalError:
+        return _empty(PANIC_EXAM_COLUMNS)
+    if df.empty:
+        return _empty(PANIC_EXAM_COLUMNS)
+    return df
+
+
+def replace_panic_exam(frame: pd.DataFrame, db_path: Path = DB_PATH) -> int:
+    cols = PANIC_EXAM_COLUMNS
+    out = frame.copy() if not frame.empty else pd.DataFrame(columns=cols)
+    for c in cols:
+        if c not in out.columns:
+            out[c] = pd.NA
+    out = out[cols]
+    replace_table("panic_exam", out, db_path)
     return int(len(out))

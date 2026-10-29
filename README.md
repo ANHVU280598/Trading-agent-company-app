@@ -67,12 +67,14 @@ python scripts/refresh_events.py
 
 Writes `data/events.csv` + `data/events_counts.json` and loads SQLite `events`. Counts for Anh’s sanity review are in `CHAT.md` and `data/events_counts.json`.
 
-## Behavior data (Model v4 Step 1)
+## Behavior pack (Model v4)
 
 VIX + CBOE put/call + AAII → `data/behavior.csv` (no CNN Fear & Greed scrape):
 
 ```bash
 python scripts/refresh_behavior.py
+python scripts/train_compare_v4.py      # walk-forward + gate + panic exam
+python scripts/panic_exam.py            # re-run exam alone
 python scripts/paper_phase5_status.py   # Phase 5 checklist numbers (ops; Live locked)
 ```
 

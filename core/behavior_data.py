@@ -203,21 +203,33 @@ def putcall_in_force(
 
     Muse: if the file posts after the close, day T uses T-1.
     Default applies a one-session lag on the trading calendar.
+
+    Do **not** forward-fill past the last published CBOE date — a stale CDN
+    file (e.g. ending 2019) must not invent 2021+ putcall values. Missing → NA
+    so crowd_mood falls back to VIX+SPY only.
     """
     idx = pd.Index(sorted(sessions), name="date")
     if putcall is None or putcall.empty:
         return pd.Series(pd.NA, index=idx, name="putcall")
     pub = putcall[["date", "putcall"]].copy()
+    pub["date"] = pub["date"].astype(str)
+    last_pub = str(pub["date"].max())
+    # Align published values onto matching session dates only
+    s = pub.drop_duplicates("date").set_index("date")["putcall"]
+    aligned = s.reindex(idx)
+    # Also allow as-of within the published span (holidays): merge_asof but clip
     pub["_d"] = pd.to_datetime(pub["date"])
-    pub = pub.drop(columns=["date"]).sort_values("_d")
+    pub2 = pub.drop(columns=["date"]).sort_values("_d")
     sess = pd.DataFrame({"date": list(idx)})
     sess["_d"] = pd.to_datetime(sess["date"])
     merged = pd.merge_asof(
         sess.sort_values("_d"),
-        pub,
+        pub2,
         on="_d",
         direction="backward",
     ).set_index("date")["putcall"]
+    # Null out anything after last publication date
+    merged = merged.where(pd.Index(merged.index.astype(str)) <= last_pub)
     if lag_one_session:
         merged = merged.shift(1)
     return merged.reindex(idx).rename("putcall")

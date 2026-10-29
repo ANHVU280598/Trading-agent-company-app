@@ -1,5 +1,53 @@
 # Muse ↔ Cursor — Team Channel
 
+## 2026-10-29 — Model v4 Steps 2–5: behavior features + panic exam + gate (Rejected)
+
+**Step:** Model v4 / Steps 2–5 (Anh: don’t wait — continue on PR #5)  
+**Base:** v1 (live paper). v2/v3 stay Rejected / not activated. Live locked.
+
+**What changed:**
+- Step 2: `FEATURE_ORDER_V4` = v1 + 8 behavior features (`core/behavior_features.py` + `build_features_v4`)
+- Step 3: `scripts/panic_exam.py` — fixed windows; SQLite `panic_exam` + `models/panic_exam_v4.json`
+- Step 4: `scripts/train_compare_v4.py` — same RF/labels/walk-forward; `models/model_v4.joblib` (+ JSON); **v1 artifact untouched**
+- Step 5: Dashboard Crowd mood card; Model page v1 vs v4 + Panic exam table
+- Put/call: CBOE CDN ends 2019-10-04 → no infinite forward-fill; imputed median for column continuity; crowd_mood uses VIX±SPY when putcall NA
+
+**v1 vs v4 (walk-forward, train 2021→2026-10-28):**
+
+| Metric | v1 (base) | v4 |
+|--------|-----------|-----|
+| Accuracy | 0.5581 | 0.5517 |
+| Baseline | 0.5493 | 0.5493 |
+| Buy precision | 0.3778 | 0.3622 |
+| Sell precision | 0.3158 | 0.2674 |
+| Train rows | 7280 | 7280 |
+
+- Behavior importance: **aaii_spread#6, vix_close#8, crowd_mood#9, vix_pct252#11, vix_chg5#12**. ≈0: putcall, capitulation_ticker, capitulation_spy.
+- Month-drop: **passed**
+
+**Gate verdict: Rejected**  
+Reasons: accuracy 0.5517 < base 0.5581; buy precision 0.3622 < 0.3778; sell precision 0.2674 < 0.3158.  
+**Active paper model: v1.**
+
+### Panic exam (behavior check — not a fifth gate)
+
+| Window | Avg sell p | Min crowd_mood | Capitulation days |
+|--------|------------|----------------|-------------------|
+| COVID 2020-02-19→03-23 | 0.248 | 0.2 (Extreme fear) | 4 |
+| 2022 bear 2022-01-03→10-14 | 0.270 | 0.2 | 1 |
+| Aug 2024 yen-unwind | 0.202 | 2.8 | 1 |
+| Apr 2025 tariff | 0.265 | 0.2 | 2 |
+
+- Avg sell_p panic **0.246** vs calm **0.180** → **higher in panic** ✓  
+- Meter hits Extreme fear in windows ✓  
+- Sell lean present but modest (“weak vs calm expectation” in notes) — explained, not hidden.
+
+**Check:** pytest 58+ passed (trailing-only, AAII lag, composite, Aug-2024 mood smoke, gate). Report: `models/v1_vs_v4_report.json`.
+
+**Blocked / notes:** Stopped per Muse report-back. Phase 5 still review/ops. No v4b / no Live.
+
+— Cursor
+
 ## 2026-10-28 — Merge #3+#4 + Model v4 Step 1 behavior data
 
 **Step:** Anh merge PRs → Doc next = Model v4 Step 1 (start condition met: v3 gate in CHAT)  

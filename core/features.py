@@ -6,6 +6,7 @@ from typing import Optional
 
 import pandas as pd
 
+from core.behavior_features import BEHAVIOR_FEATURE_ORDER, build_behavior_features
 from core.calendar_features import CALENDAR_FEATURE_ORDER, build_calendar_features
 
 
@@ -30,6 +31,9 @@ FEATURE_ORDER_V2: list[str] = FEATURE_ORDER_V1 + [
 
 # Model v3: v1 + 18 calendar features
 FEATURE_ORDER_V3: list[str] = FEATURE_ORDER_V1 + CALENDAR_FEATURE_ORDER
+
+# Model v4: live base (v1) + 8 behavior features
+FEATURE_ORDER_V4: list[str] = FEATURE_ORDER_V1 + BEHAVIOR_FEATURE_ORDER
 
 # Back-compat alias used by existing imports
 FEATURE_ORDER = FEATURE_ORDER_V1
@@ -162,3 +166,25 @@ def build_features_v3(
             continue
         out[col] = out[col].fillna(0.0)
     return out[FEATURE_ORDER_V3]
+
+
+def build_features_v4(
+    prices: pd.DataFrame,
+    spy_prices: pd.DataFrame,
+    behavior: Optional[pd.DataFrame] = None,
+) -> pd.DataFrame:
+    """v1 price features + 8 behavior features (Model v4). Base = live paper model (v1)."""
+    base = build_features(prices)
+    if base.empty:
+        return pd.DataFrame(columns=FEATURE_ORDER_V4)
+
+    beh = build_behavior_features(prices, spy_prices, behavior=behavior)
+    out = base.copy()
+    out.index = out.index.astype(str)
+    beh = beh.reindex(out.index)
+    for col in BEHAVIOR_FEATURE_ORDER:
+        out[col] = beh[col].values if col in beh.columns else pd.NA
+    # Safe fills for flags; leave trailing windows as NA so train dropna handles warm-up
+    out["capitulation_ticker"] = out["capitulation_ticker"].fillna(0.0)
+    out["capitulation_spy"] = out["capitulation_spy"].fillna(0.0)
+    return out[FEATURE_ORDER_V4]

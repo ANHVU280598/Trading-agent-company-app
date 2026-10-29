@@ -4,6 +4,11 @@ Muse reviews this file every round. Every deviation from the Muse Doc Detailed B
 
 | Date | What | Why | Chose instead |
 |------|------|-----|---------------|
+| 2026-10-29 | Gate Rejected → active stays v1 | v4 accuracy + buy/sell precision below v1 | Save v4 artifact + panic exam; no hand-tuning; Live locked |
+| 2026-10-29 | Put/call not forward-filled past last CBOE publish date | Stale CDN (ends 2019-10-04) must not invent 2021+ ratios | NA after last pub; feature column imputed with published median so rows train; crowd_mood ignores putcall when NA |
+| 2026-10-29 | SPY hist from 2017 for feature compute; VIX table still 2019+ | COVID panic window needs SPY 125d×252 warm-up before 2020 | Doc allows price history extension for exam; training rows still ≥2021-01-01 |
+| 2026-10-29 | crowd_mood uses available components during warm-up | Early sessions lack SPY 125d×252 pct | Prefer full 3-way (or 2-way without putcall); VIX-only if SPY pct still cold |
+| 2026-10-29 | Do not overwrite `model_v1.joblib` in train_compare_v4 | Muse: base untouched as rollback | Persist only `model_v4.*`; v1 metrics computed for fair gate only |
 | 2026-10-28 | CBOE `totalpc.csv` ends 2019-10-04 (no 2021+ put/call) | Official free CDN series is stale; Doc forbids inventing/scraping substitutes | Log failure; keep historical putcall through 2019-10-04 in table; v4 Steps 2+ use VIX/AAII only for train-era features |
 | 2026-10-28 | AAII fetch prefers live aaii.com with Wayback fallback | Live often 403 from cloud egress | `fetch_aaii()` tries live then Wayback snapshot; source recorded in `behavior_counts.json` |
 | 2026-10-28 | Started Model v4 Step 1 after v3 “stop for paper review” | Anh: merge then next Doc step; v3 gate in CHAT meets v4 start condition; Phase 5 is review-not-build | Step 1 behavior data + Phase 5 status harness; do not activate v2/v3; Live locked |
