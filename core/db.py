@@ -53,6 +53,7 @@ SIGNAL_GRADE_COLUMNS = [
     "spy_ret_20d",
 ]
 EVENT_COLUMNS = ["date", "type", "source", "ticker"]
+BEHAVIOR_COLUMNS = ["date", "vix_close", "putcall", "aaii_bull", "aaii_bear"]
 
 
 def connect(db_path: Path = DB_PATH) -> sqlite3.Connection:
@@ -146,6 +147,13 @@ def init_db(db_path: Path = DB_PATH) -> None:
         source TEXT,
         ticker TEXT NOT NULL DEFAULT '',
         PRIMARY KEY (date, type, ticker)
+    );
+    CREATE TABLE IF NOT EXISTS behavior (
+        date TEXT PRIMARY KEY,
+        vix_close REAL,
+        putcall REAL,
+        aaii_bull REAL,
+        aaii_bear REAL
     );
     """
     with connect(db_path) as conn:
@@ -367,4 +375,32 @@ def replace_events(frame: pd.DataFrame, db_path: Path = DB_PATH) -> int:
             out[c] = ""
     out = out[cols].fillna("")
     replace_table("events", out, db_path)
+    return int(len(out))
+
+
+def read_behavior(db_path: Path = DB_PATH) -> pd.DataFrame:
+    init_db(db_path)
+    try:
+        with connect(db_path) as conn:
+            df = pd.read_sql_query(
+                "SELECT date, vix_close, putcall, aaii_bull, aaii_bear "
+                "FROM behavior ORDER BY date",
+                conn,
+            )
+    except sqlite3.OperationalError:
+        return _empty(BEHAVIOR_COLUMNS)
+    if df.empty:
+        return _empty(BEHAVIOR_COLUMNS)
+    return df
+
+
+def replace_behavior(frame: pd.DataFrame, db_path: Path = DB_PATH) -> int:
+    """Replace the behavior table. Returns row count written."""
+    cols = BEHAVIOR_COLUMNS
+    out = frame.copy() if not frame.empty else pd.DataFrame(columns=cols)
+    for c in cols:
+        if c not in out.columns:
+            out[c] = pd.NA
+    out = out[cols]
+    replace_table("behavior", out, db_path)
     return int(len(out))

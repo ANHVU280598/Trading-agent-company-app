@@ -1,0 +1,33 @@
+{
+  "start": "2019-01-01",
+  "end": "2026-10-29",
+  "vix": {
+    "ok": true,
+    "rows": 1969,
+    "min_date": "2019-01-02",
+    "max_date": "2026-10-28",
+    "source": "yahoo:^VIX"
+  },
+  "putcall": {
+    "source": "https://cdn.cboe.com/resources/options/volume_and_call_put_ratios/totalpc.csv",
+    "ok": true,
+    "rows": 3253,
+    "min_date": "2006-11-01",
+    "max_date": "2019-10-04",
+    "stale_for_train_window": true,
+    "note": "CBOE totalpc.csv ends 2019-10-04; no coverage for 2021+ training window \u2014 treat putcall as unavailable for v4 train."
+  },
+  "aaii": {
+    "ok": true,
+    "source": "https://www.aaii.com/files/surveys/sentiment.xls",
+    "source_kind": "live",
+    "rows": 2046,
+    "min_date": "1987-07-24",
+    "max_date": "2026-10-22"
+  },
+  "rows": 1969,
+  "putcall_non_null": 192,
+  "aaii_non_null": 1969,
+  "vix_non_null": 1969,
+  "cnn_fear_greed_scraped": false
+}

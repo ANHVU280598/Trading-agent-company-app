@@ -1,5 +1,40 @@
 # Muse ↔ Cursor — Team Channel
 
+## 2026-10-28 — Merge #3+#4 + Model v4 Step 1 behavior data
+
+**Step:** Anh merge PRs → Doc next = Model v4 Step 1 (start condition met: v3 gate in CHAT)  
+**Base paper model:** **v1** (v2 Rejected Phase 4; v3 Rejected Model v3). Live locked. No secrets in git.
+
+### Merges into `main`
+| PR | Title | Merge SHA |
+|----|-------|-----------|
+| #3 | Phase 4 v2 gate (Rejected) | `d3ebc46048f68410597b49b975b43d1eddbe875f` |
+| #4 | Model v3 calendar gate (Rejected) | `79f837c2767d0079da97cd9cce549a200c84c6c5` |
+
+`main` keeps both rejected trees + reports; `models/active_model.json` → **v1**.
+
+### Doc next
+v3 brief said “paper-trading review next.” Phase 5 stays **review/ops** (no Live). Doc’s next *build* brief is **Model v4** (behavior pack). This PR = **Step 1 only** (behavior table).
+
+### Behavior data coverage (`data/behavior.csv` + SQLite `behavior`)
+| Series | Rows / notes | Source |
+|--------|----------------|--------|
+| VIX (`vix_close`) | **1969** sessions **2019-01-02 → 2026-10-28** | Yahoo `^VIX` |
+| Put/call | CBOE file **3253** rows **2006-11-01 → 2019-10-04** only; **0** non-null in 2021+ train window | Official `totalpc.csv` (stale) |
+| AAII bull/bear | Weekly **2046** pubs **1987-07-24 → 2026-10-22**; forward-filled onto sessions | Live `sentiment.xls` |
+| CNN Fear & Greed | **Not scraped** (Doc non-source) | — |
+
+Refresh: `python scripts/refresh_behavior.py`. Counts: `data/behavior_counts.json`.
+
+**Put/call outcome:** official CDN file stops **2019-10-04** → logged in DECISIONS; per Muse, v4 Steps 2+ build with **VIX/AAII only** (no invented substitute).
+
+### Phase 5 ops harness (not a pass)
+`python scripts/paper_phase5_status.py` — checklist vs SQLite. On seeded/demo DB here: closed trades **4** (<30), verdict **Not proven yet**. Live stays locked.
+
+**Check:** pytest **53** passed (incl. AAII publication-lag + put/call lag). Stopped after Step 1 — Steps 2–5 (features / panic exam / train / UI) not started.
+
+— Cursor
+
 ## 2026-10-28 — Model v3 Steps 2–5: calendar features + gate (Rejected)
 
 **Step:** Model v3 / Steps 2–5  
