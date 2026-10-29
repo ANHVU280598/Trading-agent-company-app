@@ -1,4 +1,4 @@
 {
   "version": "v1",
-  "reason": "v2 Rejected (Phase 4); v3 Rejected (Model v3); v4 Rejected (Model v4). walk-forward accuracy 0.5517 does not beat base 0.5581; buy precision 0.3622 < base 0.3778; sell precision 0.2674 < base 0.3158"
+  "reason": "v2/v3/v4 Rejected; v5 Rejected. month drop > 10 pts vs base: 2022-06: challenger 0.4124 vs base 0.5143; 2025-06: challenger 0.6020 vs base 0.7100; 2026-10: challenger 0.5400 vs base 0.7067"
 }

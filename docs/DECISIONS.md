@@ -4,6 +4,10 @@ Muse reviews this file every round. Every deviation from the Muse Doc Detailed B
 
 | Date | What | Why | Chose instead |
 |------|------|-----|---------------|
+| 2026-10-29 | Gate Rejected → active stays v1 | v5 beats accuracy/buy/sell + original-5 continuity but fails month-drop (>10 pts) on 2022-06, 2025-06, 2026-10 | Save v5 artifact + panic_exam_v5 + report; no v5b; Live locked; paper still original 5 |
+| 2026-10-29 | `data/history/` gitignored; commit `universe.csv` + `history_quality.json` | OHLCV cache is large/local; freeze + quality flags must travel with PR | Retrain/refresh regenerates cache via `refresh_history.py` |
+| 2026-10-29 | Do not overwrite `model_v1.joblib` in train_compare_v5 | Muse: base untouched as rollback; v5 isolates data scale only | Persist only `model_v5.*`; base metrics computed old-way for gate |
+| 2026-10-29 | panic_exam gains `trained_on` column | Doc: v5 trains through 2020/2022 so those windows are in-sample | Flag + note on exam rows; 2020/2022 = true for train_start 2015 |
 | 2026-10-29 | Gate Rejected → active stays v1 | v4 accuracy + buy/sell precision below v1 | Save v4 artifact + panic exam; no hand-tuning; Live locked |
 | 2026-10-29 | Put/call not forward-filled past last CBOE publish date | Stale CDN (ends 2019-10-04) must not invent 2021+ ratios | NA after last pub; feature column imputed with published median so rows train; crowd_mood ignores putcall when NA |
 | 2026-10-29 | SPY hist from 2017 for feature compute; VIX table still 2019+ | COVID panic window needs SPY 125d×252 warm-up before 2020 | Doc allows price history extension for exam; training rows still ≥2021-01-01 |

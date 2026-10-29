@@ -1,5 +1,59 @@
 # Muse ↔ Cursor — Team Channel
 
+## 2026-10-29 — Model v5: data scale-up (50 tickers / 2015+) — gate Rejected
+
+**Step:** Model v5 Steps 1–5 (Doc start met: v4 Rejected in CHAT; PR #5 merged)  
+**Base:** live paper **v1** (5 stocks, 2021+). Same features as v1 — no add/remove. Live locked. Paper still original 5 only.
+
+**What changed:**
+- Step 1: frozen `data/universe.csv` (50 = original 5 + Dow remainder + liquid names); `core/universe.py` hash/freeze guard
+- Step 2: `data/history/` cache via `scripts/refresh_history.py` (gitignored); quality flags in `data/history_quality.json`; train from **2015-01-01** (warm-up 2014)
+- Step 3: `scripts/train_compare_v5.py` — same RF/labels/walk-forward; pooled + original-5 continuity + wall-clock; **v1 artifact untouched**
+- Step 4: `evaluate_gate_v5` = 4 Phase-4 checks + original-5 accuracy within 2 pts; panic exam with `trained_on` flag
+- Step 5: Model page v5 block + continuity table; panic `trained_on` column
+
+**Universe:** hash=`8ad632c014fd91a2` · n=50 · dropped for <5y history: **none**
+
+**v1 vs v5 (walk-forward):**
+
+| Metric | v1 (base, 5×2021+) | v5 (50×2015+) |
+|--------|--------------------|---------------|
+| Accuracy | 0.5577 | **0.6629** |
+| Baseline | 0.5495 | 0.6597 |
+| Buy precision | 0.3778 | **0.4108** |
+| Sell precision | 0.3135 | **0.3546** |
+| Train rows | 7,285 | **147,279** |
+
+Class balance v5: hold 0.659 · buy 0.193 · sell 0.148
+
+**Original-5 pooled continuity:** v5 acc **0.5942** vs base 0.5577 → **within 2 pts** ✓  
+Per-ticker acc (base → v5): SPY 0.846→0.861 · AAPL 0.604→0.619 · MSFT 0.633→0.675 · NVDA 0.370→0.418 · TSLA 0.330→0.378
+
+**Wall-clock:** collect base 0.04s / v5 0.40s · walk-forward base ~20s / v5 ~715s · fit base 0.37s / v5 ~11s
+
+**Gate verdict: Rejected**  
+Failed: month drop > 10 pts vs base — `2022-06` (0.4124 vs 0.5143), `2025-06` (0.6020 vs 0.7100), `2026-10` (0.5400 vs 0.7067).  
+Accuracy / buy / sell / original-5 continuity all passed.  
+**Active paper model: v1.** Survivorship warning documented in report.
+
+### Panic exam (v5 · feature_mode=v1 · trained_on flagged)
+
+| Window | Avg sell p | Min mood | Cap days | trained_on |
+|--------|------------|----------|----------|------------|
+| COVID 2020-02-19→03-23 | 0.269 | 0.2 | 4 | **yes** |
+| 2022 bear 2022-01-03→10-14 | 0.219 | 0.2 | 1 | **yes** |
+| Aug 2024 yen-unwind | 0.193 | 2.8 | 1 | yes |
+| Apr 2025 tariff | 0.261 | 0.2 | 2 | yes |
+
+- Avg sell_p panic **0.236** vs calm **0.173** → higher in panic ✓  
+- 2020/2022 marked in-sample (memory, not recognition) per Doc.
+
+**Check:** pytest 62 passed. Report: `models/v1_vs_v5_report.json`. No v5b. No Live.
+
+**Blocked / notes:** Stopped per Muse — gate Rejected, report back. Phase 5 still review/ops after paper weeks.
+
+— Cursor
+
 ## 2026-10-29 — Model v4 Steps 2–5: behavior features + panic exam + gate (Rejected)
 
 **Step:** Model v4 / Steps 2–5 (Anh: don’t wait — continue on PR #5)  

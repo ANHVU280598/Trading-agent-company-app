@@ -19,6 +19,8 @@ V3_PATH = MODELS_DIR / "model_v3.joblib"
 V3_META = MODELS_DIR / "model_v3.json"
 V4_PATH = MODELS_DIR / "model_v4.joblib"
 V4_META = MODELS_DIR / "model_v4.json"
+V5_PATH = MODELS_DIR / "model_v5.joblib"
+V5_META = MODELS_DIR / "model_v5.json"
 ACTIVE_PATH = MODELS_DIR / "active_model.json"
 
 _VERSION_PATHS = {
@@ -26,6 +28,7 @@ _VERSION_PATHS = {
     "v2": (V2_PATH, V2_META),
     "v3": (V3_PATH, V3_META),
     "v4": (V4_PATH, V4_META),
+    "v5": (V5_PATH, V5_META),
 }
 
 
@@ -77,7 +80,7 @@ def get_active_version(default: str = "v1") -> str:
 
 def load_active_model() -> tuple[Optional[Any], dict[str, Any], str]:
     version = get_active_version("v1")
-    for candidate in (version, "v1", "v4", "v3", "v2"):
+    for candidate in (version, "v1", "v5", "v4", "v3", "v2"):
         try:
             model, meta = load_model(candidate)
             return model, meta, candidate

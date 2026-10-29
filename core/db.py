@@ -61,6 +61,7 @@ PANIC_EXAM_COLUMNS = [
     "min_crowd_mood",
     "capitulation_days",
     "notes",
+    "trained_on",
 ]
 
 
@@ -170,11 +171,21 @@ def init_db(db_path: Path = DB_PATH) -> None:
         min_crowd_mood REAL,
         capitulation_days INTEGER,
         notes TEXT,
+        trained_on INTEGER DEFAULT 0,
         PRIMARY KEY (model_version, window)
     );
     """
     with connect(db_path) as conn:
         conn.executescript(schema)
+        # Model v5: trained_on flag on panic_exam
+        pe_cols = {
+            str(r[1])
+            for r in conn.execute("PRAGMA table_info(panic_exam)").fetchall()
+        }
+        if pe_cols and "trained_on" not in pe_cols:
+            conn.execute(
+                "ALTER TABLE panic_exam ADD COLUMN trained_on INTEGER DEFAULT 0"
+            )
         # Phase 4 Step 5: additive columns on existing DBs
         cols = {
             str(r[1])
@@ -429,7 +440,7 @@ def read_panic_exam(db_path: Path = DB_PATH) -> pd.DataFrame:
         with connect(db_path) as conn:
             df = pd.read_sql_query(
                 "SELECT model_version, window, avg_sell_p, min_crowd_mood, "
-                "capitulation_days, notes FROM panic_exam "
+                "capitulation_days, notes, trained_on FROM panic_exam "
                 "ORDER BY model_version, window",
                 conn,
             )
@@ -437,6 +448,8 @@ def read_panic_exam(db_path: Path = DB_PATH) -> pd.DataFrame:
         return _empty(PANIC_EXAM_COLUMNS)
     if df.empty:
         return _empty(PANIC_EXAM_COLUMNS)
+    if "trained_on" not in df.columns:
+        df["trained_on"] = 0
     return df
 
 

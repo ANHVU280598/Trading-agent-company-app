@@ -87,3 +87,52 @@ def evaluate_gate(
         reasons=reasons or ["all gate checks passed"],
         checks=checks,
     )
+
+
+def evaluate_gate_v5(
+    base: dict[str, Any],
+    challenger: dict[str, Any],
+    *,
+    base_original5: dict[str, Any] | None = None,
+    challenger_original5: dict[str, Any] | None = None,
+    continuity_limit: float = 0.02,
+    month_drop_limit: float = 0.10,
+) -> GateResult:
+    """Model v5 gate = Phase 4 four checks + original-5 continuity guard.
+
+    Continuity: on the original 5 tickers pooled, challenger accuracy must not
+    fall more than `continuity_limit` (default 2 pts) below base.
+    """
+    base_gate = evaluate_gate(base, challenger, month_drop_limit=month_drop_limit)
+    reasons = list(base_gate.reasons) if not base_gate.passed else []
+    checks = dict(base_gate.checks)
+
+    cont_ok = True
+    if base_original5 is not None and challenger_original5 is not None:
+        a1 = float(base_original5.get("accuracy") or 0.0)
+        a2 = float(challenger_original5.get("accuracy") or 0.0)
+        cont_ok = a2 >= a1 - continuity_limit - 1e-12
+        checks["original5_accuracy_base"] = a1
+        checks["original5_accuracy_challenger"] = a2
+        checks["original5_continuity_ok"] = cont_ok
+        if not cont_ok:
+            reasons.append(
+                f"original-5 continuity: accuracy {a2:.4f} is more than "
+                f"{continuity_limit:.0%} below base {a1:.4f}"
+            )
+    else:
+        checks["original5_continuity_ok"] = None
+
+    # If base four passed, reasons may be the success message — clear before append
+    if base_gate.passed:
+        reasons = [r for r in reasons if r != "all gate checks passed"]
+
+    passed = base_gate.passed and cont_ok
+    if passed and not reasons:
+        reasons = ["all gate checks passed"]
+    return GateResult(
+        passed=passed,
+        verdict="Kept" if passed else "Rejected",
+        reasons=reasons,
+        checks=checks,
+    )

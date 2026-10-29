@@ -1,4 +1,4 @@
-"""Model — results + Phase 4/v3/v4 gates + panic exam."""
+"""Model — results + Phase 4/v3/v4/v5 gates + panic exam."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from core import db
 from core.charts import feature_importance_bars, walk_forward_bars
 from core.components import kpi_card
 from core.config import MODEL_HONESTY
-from core.model_store import V1_META, V2_META, V3_META, V4_META
+from core.model_store import V1_META, V2_META, V3_META, V4_META, V5_META
 from core.repository import (
     load_active_model_meta,
     load_panic_exam_report,
@@ -19,6 +19,7 @@ from core.repository import (
     load_v1_v2_report,
     load_v1_v3_report,
     load_v1_v4_report,
+    load_v1_v5_report,
 )
 from core.ui import page_heading
 
@@ -32,6 +33,7 @@ with st.spinner("Loading latest data…"):
     compare_v2 = load_v1_v2_report()
     compare_v3 = load_v1_v3_report()
     compare_v4 = load_v1_v4_report()
+    compare_v5 = load_v1_v5_report()
     panic_exam = load_panic_exam_report()
     active_meta = load_active_model_meta()
     trades = db.read_trades()
@@ -44,15 +46,15 @@ display_base = None
 retrain_date = "—"
 
 # Prefer active model's own report side when present (v1 from either gate)
-for compare in (compare_v4, compare_v2, compare_v3):
+for compare in (compare_v5, compare_v4, compare_v2, compare_v3):
     if not compare:
         continue
-    side = compare.get(active_version) or compare.get("v1") or {}
-    if side and display_acc is None:
+    side = compare.get(active_version) or compare.get("v1") or compare.get("v5") or {}
+    if side and display_acc is None and side.get("accuracy") is not None:
         display_acc = float(side.get("accuracy") or 0)
         display_base = float(side.get("baseline") or 0)
 
-for meta_path in (V4_META, V3_META, V2_META, V1_META):
+for meta_path in (V5_META, V4_META, V3_META, V2_META, V1_META):
     if meta_path.exists():
         retrain_date = str(
             json.loads(meta_path.read_text(encoding="utf-8")).get("trained_date")
@@ -98,6 +100,8 @@ else:
 
     st.caption(
         results.get("cost_assumption", "")
+        or (compare_v5.get("v5") or {}).get("cost_assumption", "")
+        or (compare_v5.get("survivorship_warning") or "")
         or (compare_v4.get("v1") or {}).get("cost_assumption", "")
         or (compare_v2.get("v1") or {}).get("cost_assumption", "")
         or (compare_v3.get("v1") or {}).get("cost_assumption", "")
@@ -161,10 +165,66 @@ else:
             words = ch.get("sentiment_importance_rank_words")
         elif challenger_key == "v3":
             words = ch.get("calendar_importance_words")
-        else:
+        elif challenger_key == "v4":
             words = ch.get("behavior_importance_words")
+        else:
+            words = None
         if words:
             st.caption(str(words))
+        if challenger_key == "v5":
+            o5 = ch.get("original5_pooled") or {}
+            checks = gate.get("checks") or {}
+            if o5 or checks.get("original5_accuracy_base") is not None:
+                st.caption(
+                    "Original-5 pooled continuity · "
+                    f"base={checks.get('original5_accuracy_base', '—')} · "
+                    f"v5={checks.get('original5_accuracy_challenger', o5.get('accuracy'))} · "
+                    f"ok={checks.get('original5_continuity_ok')}"
+                )
+
+    _gate_block("v1 vs v5 (Model v5 gate)", compare_v5, "v5")
+    if compare_v5 and compare_v5.get("continuity_original5"):
+        st.markdown(
+            '<div class="tac-section">Original-5 continuity (per ticker)</div>',
+            unsafe_allow_html=True,
+        )
+        cbody = []
+        for row in compare_v5["continuity_original5"]:
+
+            def _pct(x: object) -> str:
+                if x is None:
+                    return "—"
+                return f"{float(x) * 100:.1f}%"
+
+            cbody.append(
+                "<tr>"
+                f"<td>{row.get('ticker')}</td>"
+                f"<td class='tac-num'>{_pct(row.get('base_accuracy'))}</td>"
+                f"<td class='tac-num'>{_pct(row.get('v5_accuracy'))}</td>"
+                f"<td class='tac-num'>{_pct(row.get('base_buy_precision'))}</td>"
+                f"<td class='tac-num'>{_pct(row.get('v5_buy_precision'))}</td>"
+                f"<td class='tac-num'>{_pct(row.get('base_sell_precision'))}</td>"
+                f"<td class='tac-num'>{_pct(row.get('v5_sell_precision'))}</td>"
+                "</tr>"
+            )
+        st.markdown(
+            f"""
+            <div class="tac-panel">
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <thead><tr class="tac-muted">
+                <th align="left">Ticker</th>
+                <th align="right">Base acc</th><th align="right">v5 acc</th>
+                <th align="right">Base buy p</th><th align="right">v5 buy p</th>
+                <th align="right">Base sell p</th><th align="right">v5 sell p</th>
+              </tr></thead>
+              <tbody>{''.join(cbody)}</tbody>
+            </table>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if compare_v5.get("survivorship_warning"):
+            st.caption(str(compare_v5["survivorship_warning"]))
 
     _gate_block("v1 vs v4 (Model v4 gate)", compare_v4, "v4")
     _gate_block("v1 vs v2 (Phase 4 gate)", compare_v2, "v2")
@@ -177,13 +237,15 @@ else:
         exam_frame = pd.DataFrame(panic_exam["windows"])
     if exam_frame.empty:
         st.markdown(
-            '<div class="tac-panel-empty">No panic exam yet. Run scripts/train_compare_v4.py.</div>',
+            '<div class="tac-panel-empty">No panic exam yet. Run scripts/train_compare_v5.py.</div>',
             unsafe_allow_html=True,
         )
     else:
         live_exam = exam_frame
         if "model_version" in live_exam.columns:
             prefer = live_exam[live_exam["model_version"] == active_version]
+            if prefer.empty:
+                prefer = live_exam[live_exam["model_version"] == "v5"]
             if prefer.empty:
                 prefer = live_exam[live_exam["model_version"] == "v4"]
             if not prefer.empty:
@@ -197,6 +259,7 @@ else:
             )
         if summary_bits:
             st.caption(" · ".join(summary_bits) + " (behavior check, not a gate)")
+        has_trained = "trained_on" in live_exam.columns
         body = []
         for _, r in live_exam.iterrows():
             sell = r.get("avg_sell_p")
@@ -204,15 +267,25 @@ else:
             caps = r.get("capitulation_days")
             sell_s = "—" if sell is None or sell != sell else f"{float(sell) * 100:.1f}%"
             mood_s = "—" if mood is None or mood != mood else f"{float(mood):.1f}"
+            trained_cell = ""
+            if has_trained:
+                tv = r.get("trained_on")
+                trained_cell = (
+                    f"<td class='tac-num'>{'yes' if int(tv or 0) else 'no'}</td>"
+                )
             body.append(
                 "<tr>"
                 f"<td>{r.get('window')}</td>"
                 f"<td class='tac-num'>{sell_s}</td>"
                 f"<td class='tac-num'>{mood_s}</td>"
                 f"<td class='tac-num'>{int(caps) if caps == caps else '—'}</td>"
+                f"{trained_cell}"
                 f"<td>{r.get('notes') or '—'}</td>"
                 "</tr>"
             )
+        trained_hdr = (
+            "<th align=\"right\">Trained on</th>" if has_trained else ""
+        )
         st.markdown(
             f"""
             <div class="tac-panel">
@@ -220,6 +293,7 @@ else:
               <thead><tr class="tac-muted">
                 <th align="left">Window</th><th align="right">Avg sell p</th>
                 <th align="right">Min crowd mood</th><th align="right">Capitulation days</th>
+                {trained_hdr}
                 <th align="left">Notes</th>
               </tr></thead>
               <tbody>{''.join(body)}</tbody>
@@ -234,10 +308,10 @@ else:
         unsafe_allow_html=True,
     )
     wf_source = None
-    for compare in (compare_v4, compare_v2, compare_v3):
+    for compare in (compare_v5, compare_v4, compare_v2, compare_v3):
         if not compare:
             continue
-        side = compare.get(active_version) or compare.get("v1") or {}
+        side = compare.get(active_version) or compare.get("v1") or compare.get("v5") or {}
         if side.get("walk_forward"):
             wf_source = side.get("walk_forward")
             break
@@ -273,7 +347,9 @@ else:
     with right:
         st.markdown('<div class="tac-section">Feature importance</div>', unsafe_allow_html=True)
         fi = {}
-        if compare_v4 and (compare_v4.get("v4") or {}).get("feature_importance"):
+        if compare_v5 and (compare_v5.get("v5") or {}).get("feature_importance"):
+            fi = compare_v5["v5"]["feature_importance"]
+        elif compare_v4 and (compare_v4.get("v4") or {}).get("feature_importance"):
             fi = compare_v4["v4"]["feature_importance"]
         elif compare_v3 and (compare_v3.get("v3") or {}).get("feature_importance"):
             fi = compare_v3["v3"]["feature_importance"]
