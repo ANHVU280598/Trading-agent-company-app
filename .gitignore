@@ -20,3 +20,5 @@ dist/
 build/
 .streamlit/secrets.toml
 .playwright-mcp/
+
+data/history/

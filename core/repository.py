@@ -25,7 +25,9 @@ RESULTS_PATH = ROOT / "results.json"
 V1_V2_REPORT_PATH = ROOT / "models" / "v1_vs_v2_report.json"
 V1_V3_REPORT_PATH = ROOT / "models" / "v1_vs_v3_report.json"
 V1_V4_REPORT_PATH = ROOT / "models" / "v1_vs_v4_report.json"
+V1_V5_REPORT_PATH = ROOT / "models" / "v1_vs_v5_report.json"
 PANIC_EXAM_REPORT_PATH = ROOT / "models" / "panic_exam_v4.json"
+PANIC_EXAM_V5_REPORT_PATH = ROOT / "models" / "panic_exam_v5.json"
 ACTIVE_MODEL_PATH = ROOT / "models" / "active_model.json"
 
 
@@ -159,8 +161,17 @@ def load_v1_v4_report(path: Path = V1_V4_REPORT_PATH) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def load_v1_v5_report(path: Path = V1_V5_REPORT_PATH) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def load_panic_exam_report(path: Path = PANIC_EXAM_REPORT_PATH) -> dict[str, Any]:
     if not path.exists():
+        # Prefer newest panic exam artifact if present
+        if PANIC_EXAM_V5_REPORT_PATH.exists():
+            return json.loads(PANIC_EXAM_V5_REPORT_PATH.read_text(encoding="utf-8"))
         return {}
     return json.loads(path.read_text(encoding="utf-8"))
 

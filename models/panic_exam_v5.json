@@ -1,0 +1,48 @@
+{
+  "model_version": "v5",
+  "train_start": "2015-01-01",
+  "feature_mode": "v1",
+  "avg_sell_p_panic": 0.23555620780617376,
+  "avg_sell_p_calm": 0.1728525711450638,
+  "sell_p_higher_in_panic": true,
+  "calm_capitulation_days_total": 0,
+  "windows": [
+    {
+      "model_version": "v5",
+      "window": "COVID crash (2020-02-19\u21922020-03-23)",
+      "avg_sell_p": 0.26940418113803705,
+      "min_crowd_mood": 0.1984126984126984,
+      "capitulation_days": 4,
+      "notes": "avg sell_p=0.269; min crowd_mood=0.2; meter reads Extreme fear; sell lean weak vs calm expectation; trained_on=true (in-sample)",
+      "trained_on": 1
+    },
+    {
+      "model_version": "v5",
+      "window": "2022 bear slide (2022-01-03\u21922022-10-14)",
+      "avg_sell_p": 0.21920270004785436,
+      "min_crowd_mood": 0.1984126984126984,
+      "capitulation_days": 1,
+      "notes": "avg sell_p=0.219; min crowd_mood=0.2; meter reads Extreme fear; sell lean weak vs calm expectation; trained_on=true (in-sample)",
+      "trained_on": 1
+    },
+    {
+      "model_version": "v5",
+      "window": "Aug 2024 yen-unwind (2024-08-01\u21922024-08-09)",
+      "avg_sell_p": 0.19250766524452625,
+      "min_crowd_mood": 2.777777777777777,
+      "capitulation_days": 1,
+      "notes": "avg sell_p=0.193; min crowd_mood=2.8; meter reads Extreme fear; sell lean weak vs calm expectation; trained_on=true (in-sample)",
+      "trained_on": 1
+    },
+    {
+      "model_version": "v5",
+      "window": "Apr 2025 tariff drop (2025-04-02\u21922025-04-11)",
+      "avg_sell_p": 0.2611102847942773,
+      "min_crowd_mood": 0.1984126984126984,
+      "capitulation_days": 2,
+      "notes": "avg sell_p=0.261; min crowd_mood=0.2; meter reads Extreme fear; sell lean weak vs calm expectation; trained_on=true (in-sample)",
+      "trained_on": 1
+    }
+  ],
+  "meta_version": "v5"
+}

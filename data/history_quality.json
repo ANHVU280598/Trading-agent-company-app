@@ -1,0 +1,806 @@
+{
+  "start": "2014-01-01",
+  "end": "2026-10-29",
+  "tickers": {
+    "NVDA": {
+      "ticker": "NVDA",
+      "path": "/workspace/data/history/NVDA.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "MSFT": {
+      "ticker": "MSFT",
+      "path": "/workspace/data/history/MSFT.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "SPY": {
+      "ticker": "SPY",
+      "path": "/workspace/data/history/SPY.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "AAPL": {
+      "ticker": "AAPL",
+      "path": "/workspace/data/history/AAPL.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "TSLA": {
+      "ticker": "TSLA",
+      "path": "/workspace/data/history/TSLA.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "AMGN": {
+      "ticker": "AMGN",
+      "path": "/workspace/data/history/AMGN.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "AXP": {
+      "ticker": "AXP",
+      "path": "/workspace/data/history/AXP.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "BA": {
+      "ticker": "BA",
+      "path": "/workspace/data/history/BA.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "AMZN": {
+      "ticker": "AMZN",
+      "path": "/workspace/data/history/AMZN.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "CRM": {
+      "ticker": "CRM",
+      "path": "/workspace/data/history/CRM.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "CAT": {
+      "ticker": "CAT",
+      "path": "/workspace/data/history/CAT.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "CSCO": {
+      "ticker": "CSCO",
+      "path": "/workspace/data/history/CSCO.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "CVX": {
+      "ticker": "CVX",
+      "path": "/workspace/data/history/CVX.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "DOW": {
+      "ticker": "DOW",
+      "path": "/workspace/data/history/DOW.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 1914
+      },
+      "min_date": "2019-03-20",
+      "max_date": "2026-10-28"
+    },
+    "DIS": {
+      "ticker": "DIS",
+      "path": "/workspace/data/history/DIS.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "GS": {
+      "ticker": "GS",
+      "path": "/workspace/data/history/GS.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "HD": {
+      "ticker": "HD",
+      "path": "/workspace/data/history/HD.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "HON": {
+      "ticker": "HON",
+      "path": "/workspace/data/history/HON.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "IBM": {
+      "ticker": "IBM",
+      "path": "/workspace/data/history/IBM.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "JNJ": {
+      "ticker": "JNJ",
+      "path": "/workspace/data/history/JNJ.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "JPM": {
+      "ticker": "JPM",
+      "path": "/workspace/data/history/JPM.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "MCD": {
+      "ticker": "MCD",
+      "path": "/workspace/data/history/MCD.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "KO": {
+      "ticker": "KO",
+      "path": "/workspace/data/history/KO.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "MMM": {
+      "ticker": "MMM",
+      "path": "/workspace/data/history/MMM.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "MRK": {
+      "ticker": "MRK",
+      "path": "/workspace/data/history/MRK.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "NKE": {
+      "ticker": "NKE",
+      "path": "/workspace/data/history/NKE.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "PG": {
+      "ticker": "PG",
+      "path": "/workspace/data/history/PG.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "SHW": {
+      "ticker": "SHW",
+      "path": "/workspace/data/history/SHW.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "TRV": {
+      "ticker": "TRV",
+      "path": "/workspace/data/history/TRV.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "UNH": {
+      "ticker": "UNH",
+      "path": "/workspace/data/history/UNH.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "V": {
+      "ticker": "V",
+      "path": "/workspace/data/history/V.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "VZ": {
+      "ticker": "VZ",
+      "path": "/workspace/data/history/VZ.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "WMT": {
+      "ticker": "WMT",
+      "path": "/workspace/data/history/WMT.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "GOOGL": {
+      "ticker": "GOOGL",
+      "path": "/workspace/data/history/GOOGL.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "META": {
+      "ticker": "META",
+      "path": "/workspace/data/history/META.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "AVGO": {
+      "ticker": "AVGO",
+      "path": "/workspace/data/history/AVGO.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "ORCL": {
+      "ticker": "ORCL",
+      "path": "/workspace/data/history/ORCL.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "ADBE": {
+      "ticker": "ADBE",
+      "path": "/workspace/data/history/ADBE.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "NFLX": {
+      "ticker": "NFLX",
+      "path": "/workspace/data/history/NFLX.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "BAC": {
+      "ticker": "BAC",
+      "path": "/workspace/data/history/BAC.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "WFC": {
+      "ticker": "WFC",
+      "path": "/workspace/data/history/WFC.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "LLY": {
+      "ticker": "LLY",
+      "path": "/workspace/data/history/LLY.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "ABBV": {
+      "ticker": "ABBV",
+      "path": "/workspace/data/history/ABBV.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "XOM": {
+      "ticker": "XOM",
+      "path": "/workspace/data/history/XOM.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "COP": {
+      "ticker": "COP",
+      "path": "/workspace/data/history/COP.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "COST": {
+      "ticker": "COST",
+      "path": "/workspace/data/history/COST.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "PEP": {
+      "ticker": "PEP",
+      "path": "/workspace/data/history/PEP.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "GE": {
+      "ticker": "GE",
+      "path": "/workspace/data/history/GE.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "DE": {
+      "ticker": "DE",
+      "path": "/workspace/data/history/DE.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    },
+    "NEE": {
+      "ticker": "NEE",
+      "path": "/workspace/data/history/NEE.csv",
+      "cached": false,
+      "source": "yahoo",
+      "data_quality_flags": "",
+      "ok": true,
+      "quality": {
+        "gap_gt_5td": 0,
+        "jump_gt_40pct": 0,
+        "zero_vol_streak_3": 0,
+        "rows": 3225
+      },
+      "min_date": "2014-01-02",
+      "max_date": "2026-10-28"
+    }
+  }
+}
